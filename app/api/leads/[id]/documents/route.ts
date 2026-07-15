@@ -7,6 +7,12 @@ import { getSessionUser } from "@/lib/auth";
 import { promises as fs } from "fs";
 import path from "path";
 
+function buildClientId(email: string, phone: string): string {
+  const cleanEmail = email.toLowerCase().replace(/[^a-z0-9]/g, "_");
+  const cleanPhone = phone.replace(/[^0-9]/g, "");
+  return `${cleanEmail}_${cleanPhone}`;
+}
+
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await dbConnect();
@@ -70,7 +76,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    const clientId = buildClientId(c.email, c.phone);
+    const safeFolderName = folder.replace(/[^a-zA-Z0-9 _-]/g, "_");
+    const uploadDir = path.join(process.cwd(), "public", "uploads", clientId, safeFolderName);
     await fs.mkdir(uploadDir, { recursive: true });
 
     const uniqueFilename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
@@ -78,7 +86,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     await fs.writeFile(filePath, buffer);
 
-    const publicUrl = `/uploads/${uniqueFilename}`;
+    const publicUrl = `/uploads/${clientId}/${safeFolderName}/${uniqueFilename}`;
 
     const session = await getSessionUser();
     const userName = session?.user?.name || "System";

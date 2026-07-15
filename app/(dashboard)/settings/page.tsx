@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Settings, Bell, Link as LinkIcon, Shield, RefreshCw, Loader2, CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
+import { Settings, Bell, Link as LinkIcon, RefreshCw, Loader2, CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PageHeader } from "@/components/ui/PageHeader";
 
@@ -10,7 +10,6 @@ const tabs = [
   { id: "general", label: "General", icon: Settings },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "integrations", label: "Integrations", icon: LinkIcon },
-  { id: "security", label: "Security", icon: Shield },
 ];
 
 function Toggle({ defaultOn = false }: { defaultOn?: boolean }) {
@@ -52,7 +51,7 @@ export default function SettingsPage() {
   const [googleSheetUrl, setGoogleSheetUrl] = useState("");
   const [syncInterval, setSyncInterval] = useState("every_2_hours");
   const [isActive, setIsActive] = useState(false);
-  
+
   // Stats & Sync log status
   const [lastSyncStatus, setLastSyncStatus] = useState("never");
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
@@ -153,9 +152,8 @@ export default function SettingsPage() {
               <button
                 key={id}
                 onClick={() => setTab(id)}
-                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  tab === id ? "bg-[#EFF6FF] text-[#2563EB]" : "text-[#474569] hover:bg-[#F7F8FA]"
-                }`}
+                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${tab === id ? "bg-[#EFF6FF] text-[#2563EB]" : "text-[#474569] hover:bg-[#F7F8FA]"
+                  }`}
               >
                 <Icon size={15} />
                 {label}
@@ -219,7 +217,7 @@ export default function SettingsPage() {
             {tab === "integrations" && (
               <div className="card p-6">
                 <h3 className="text-base font-semibold text-[#111827] mb-5">Integrations</h3>
-                
+
                 {loadingConfig ? (
                   <div className="flex flex-col items-center justify-center py-10 gap-2">
                     <Loader2 className="w-6 h-6 text-[#2563EB] animate-spin" />
@@ -308,11 +306,10 @@ export default function SettingsPage() {
 
                       {/* Log Info Box */}
                       {lastSyncStatus !== "never" && (
-                        <div className={`p-4 rounded-xl border text-xs font-medium space-y-1 ${
-                          lastSyncStatus === "success" 
-                            ? "bg-emerald-50/50 border-emerald-100 text-emerald-800" 
-                            : "bg-red-50/50 border-red-100 text-red-800"
-                        }`}>
+                        <div className={`p-4 rounded-xl border text-xs font-medium space-y-1 ${lastSyncStatus === "success"
+                          ? "bg-emerald-50/50 border-emerald-100 text-emerald-800"
+                          : "bg-red-50/50 border-red-100 text-red-800"
+                          }`}>
                           <div className="flex items-center gap-1.5 font-bold mb-1">
                             {lastSyncStatus === "success" ? (
                               <>
@@ -369,55 +366,13 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    {/* Dummy Integrations */}
-                    {["WhatsApp Business API", "SMS Gateway", "Email SMTP"].map((name) => (
-                      <div key={name} className="p-4 border border-[#E5E7EB] rounded-xl flex items-center justify-between opacity-60 bg-white shadow-sm">
-                        <div>
-                          <p className="text-sm font-semibold text-[#111827]">{name}</p>
-                          <p className="text-xs text-[#9CA3AF]">Not configured</p>
-                        </div>
-                        <button className="px-3 py-1.5 border border-[#D1D5DB] text-xs rounded-lg text-[#374151] hover:bg-[#F9FAFB] transition-colors">
-                          Configure
-                        </button>
-                      </div>
-                    ))}
+
                   </div>
                 )}
               </div>
             )}
 
-            {tab === "security" && (
-              <div className="card p-6">
-                <h3 className="text-base font-semibold text-[#111827] mb-5">Security Settings</h3>
-                <div className="space-y-4">
-                  {[
-                    { label: "Session Timeout", desc: "Automatically log out after inactivity", value: "30 minutes" },
-                    { label: "Min Password Length", desc: "Minimum characters required", value: "8 characters" },
-                    { label: "Password Expiry", desc: "Force password change after", value: "90 days" },
-                  ].map(({ label, desc, value }) => (
-                    <div key={label} className="flex items-center justify-between py-3 border-b border-[#F3F4F6] last:border-0">
-                      <div>
-                        <p className="text-sm font-medium text-[#111827]">{label}</p>
-                        <p className="text-xs text-[#9CA3AF]">{desc}</p>
-                      </div>
-                      <select className="px-3 py-1.5 border border-[#D1D5DB] rounded-lg text-xs focus:outline-none focus:border-[#3B82F6] transition-all text-[#111827] bg-white cursor-pointer">
-                        <option>{value}</option>
-                      </select>
-                    </div>
-                  ))}
-                  <div className="flex items-center justify-between py-3">
-                    <div>
-                      <p className="text-sm font-medium text-[#111827]">Two-Factor Authentication</p>
-                      <p className="text-xs text-[#9CA3AF]">Add an extra layer of security</p>
-                    </div>
-                    <Toggle defaultOn={false} />
-                  </div>
-                </div>
-                <button className="mt-4 px-4 py-2 bg-[#2563EB] text-white rounded-lg text-sm font-medium hover:bg-[#1D4ED8] transition-colors">
-                  Save Security Settings
-                </button>
-              </div>
-            )}
+
           </div>
         </div>
       </motion.div>

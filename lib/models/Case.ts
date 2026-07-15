@@ -10,7 +10,7 @@ export interface ICase extends Document {
   bankId: mongoose.Types.ObjectId;
   channelPartnerId?: mongoose.Types.ObjectId;
   assignedUserId?: mongoose.Types.ObjectId;
-  status: "New" | "Pending" | "Approved" | "Rejected" | "Disbursed";
+  status: "New" | "Assigned" | "Not Connected" | "Not Interested" | "Document Pending" | "Processing" | "Approved" | "Rejected" | "Disbursed" | "Pending";
   disbursedAmount: number;
   approvedDate?: string;
   disbursedDate?: string;
@@ -45,7 +45,11 @@ const CaseSchema = new Schema<ICase>(
     assignedUserId: { type: Schema.Types.ObjectId, ref: "User" },
     status: {
       type: String,
-      enum: ["New", "Pending", "Approved", "Rejected", "Disbursed"],
+      enum: [
+        "New", "Assigned", "Not Connected", "Not Interested",
+        "Document Pending", "Processing", "Approved", "Rejected", "Disbursed",
+        "Pending", // legacy value — mapped to Processing in API responses
+      ],
       default: "New",
     },
     disbursedAmount: { type: Number, default: 0 },

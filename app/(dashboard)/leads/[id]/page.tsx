@@ -12,7 +12,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
-const tabs = ["Overview", "Documents", "Timeline", "Commission"];
+const tabs = ["Overview", "Documents", "Timeline"];
 
 export default function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -53,7 +53,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
 
   const [uploadForm, setUploadForm] = useState({
     name: "",
-    folder: "KYC" as "KYC" | "Loan Application" | "Other",
+    folder: "KYC" as "KYC" | "Bank Documents" | "Financial Documents" | "Property Documents" | "Other",
   });
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -320,7 +320,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
       await uploadPromise;
 
       setSelectedFile(null);
-      setUploadForm({ name: "", folder: "KYC" });
+      setUploadForm({ name: "", folder: "KYC" as any });
       setIsUploadOpen(false);
       await fetchDocuments();
       await fetchActivities();
@@ -555,8 +555,8 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {["KYC", "Loan Application", "Other"].map((folderName) => {
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                  {["KYC", "Bank Documents", "Financial Documents", "Property Documents", "Other"].map((folderName) => {
                     const files = getDocsInFolder(folderName);
                     return (
                       <div key={folderName} className="border border-[#E5E7EB] rounded-2xl p-4 bg-[#F9FAFB]/50 hover:border-blue-300 hover:shadow-sm transition-all duration-200">
@@ -669,85 +669,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             )}
 
-            {activeTab === "Commission" && (
-              <div className="card p-5 bg-white border border-[#E5E7EB] rounded-xl shadow-sm max-w-xl">
-                <h3 className="text-sm font-bold text-[#111827] mb-2 flex items-center gap-2">
-                  <DollarSign size={15} className="text-emerald-500" />
-                  Commission Calculator & Setup
-                </h3>
-                <p className="text-xs text-[#6B7280] mb-5">
-                  Calculations are run based on the disbursed amount. (Fallback to requested amount if not disbursed yet).
-                </p>
 
-                <form onSubmit={handleCommissionSubmit} className="space-y-4 font-medium">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-[#374151] block">Payout Rate (%)</label>
-                      <input
-                        type="number"
-                        step="0.05"
-                        min="0"
-                        value={commissionForm.payoutRate}
-                        onChange={(e) => setCommissionForm({ ...commissionForm, payoutRate: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-3.5 py-2 border border-[#D1D5DB] rounded-xl text-sm text-[#111827] focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-[#374151] block">Commission Category</label>
-                      <select
-                        value={commissionForm.commissionType}
-                        onChange={(e) => setCommissionForm({ ...commissionForm, commissionType: e.target.value })}
-                        className="w-full px-3.5 py-2 border border-[#D1D5DB] rounded-xl text-sm text-[#111827] focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-white cursor-pointer"
-                      >
-                        <option value="Bank">Bank Commission</option>
-                        <option value="Partner">Partner Payout</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-[#374151] block">Payment Status</label>
-                      <select
-                        value={commissionForm.status}
-                        onChange={(e) => setCommissionForm({ ...commissionForm, status: e.target.value as any })}
-                        className="w-full px-3.5 py-2 border border-[#D1D5DB] rounded-xl text-sm text-[#111827] focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-white cursor-pointer"
-                      >
-                        <option value="Unpaid">Unpaid</option>
-                        <option value="Processing">Processing</option>
-                        <option value="Paid">Paid</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Calculation summary */}
-                  {commission && (
-                    <div className="p-4 bg-emerald-50/50 border border-emerald-100 rounded-xl space-y-1 text-xs text-emerald-800 mt-4">
-                      <p>
-                        <strong>Active Payout Base:</strong> {formatCurrency(lead.disbursed_amount || lead.loan_amount)}
-                      </p>
-                      <p>
-                        <strong>Calculated Commissions:</strong> {formatCurrency(Math.round((lead.disbursed_amount || lead.loan_amount) * (commissionForm.payoutRate / 100)))}
-                      </p>
-                      <p className="text-[10px] text-emerald-600 mt-1">
-                        Last saved by: {commission.updatedBy || "System"} on {new Date(commission.updatedAt).toLocaleDateString("en-IN")}
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="flex justify-end pt-2">
-                    <button
-                      type="submit"
-                      disabled={saving}
-                      className="px-4 py-2 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl text-xs font-bold disabled:opacity-50 transition-all flex items-center gap-1.5 shadow-sm"
-                    >
-                      {saving && <Loader2 size={12} className="animate-spin" />}
-                      Save commission settings
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
           </motion.div>
         </AnimatePresence>
 
@@ -928,10 +850,14 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                     className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:outline-none focus:border-blue-500 font-medium text-sm text-[#111827] bg-white cursor-pointer"
                   >
                     <option value="New">New</option>
+                    <option value="Assigned">Assigned</option>
+                    <option value="Not Connected">Not Connected</option>
+                    <option value="Not Interested">Not Interested</option>
+                    <option value="Document Pending">Document Pending</option>
                     <option value="Processing">Processing</option>
                     <option value="Approved">Approved</option>
-                    <option value="Disbursed">Disbursed</option>
                     <option value="Rejected">Rejected</option>
+                    <option value="Disbursed">Disbursed</option>
                   </select>
                 </div>
 
@@ -1023,9 +949,11 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                     disabled={saving || uploadProgress !== null}
                     className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:outline-none focus:border-blue-500 font-medium text-sm text-[#111827] bg-white cursor-pointer disabled:opacity-60"
                   >
-                    <option value="KYC">KYC Folders</option>
-                    <option value="Loan Application">Loan Applications</option>
-                    <option value="Other">Other Documents</option>
+                    <option value="KYC">KYC</option>
+                    <option value="Bank Documents">Bank Documents</option>
+                    <option value="Financial Documents">Financial Documents</option>
+                    <option value="Property Documents">Property Documents</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
 

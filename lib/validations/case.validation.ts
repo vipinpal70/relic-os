@@ -20,7 +20,10 @@ export const CaseValidationSchema = z.object({
     .optional()
     .or(z.literal(""))
     .transform(val => val === "" ? undefined : val),
-  status: z.enum(["New", "Pending", "Approved", "Rejected", "Disbursed"]).default("New"),
+  status: z.enum([
+    "New", "Assigned", "Not Connected", "Not Interested",
+    "Document Pending", "Processing", "Approved", "Rejected", "Disbursed",
+  ]).default("New"),
   disbursedAmount: z.coerce.number().min(0).default(0),
   remarks: z.string().optional().or(z.literal("")),
 });

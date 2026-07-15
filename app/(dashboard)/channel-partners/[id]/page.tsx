@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -15,7 +15,8 @@ import {
   Loader2, Mail, Phone, MapPin, Calendar, ShieldCheck, UserCheck,
   Percent, ArrowUpDown, ChevronLeft, ChevronRight, Plus, Trash2,
   DollarSign, FileText, CalendarCheck, Settings, BarChart2, Briefcase,
-  AlertCircle, CheckCircle, PlusCircle, CreditCard, Clock, CheckSquare, Search
+  AlertCircle, CheckCircle, PlusCircle, CreditCard, Clock, CheckSquare, Search,
+  Eye, EyeOff, RefreshCw, KeyRound, UserPlus
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -85,11 +86,10 @@ export default function ChannelPartnerProfilePage() {
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold text-[#111827]">{partner.name}</h1>
                 <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${
-                    partner.status === "Active"
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      : "bg-gray-100 text-gray-600 border-gray-200"
-                  }`}
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${partner.status === "Active"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : "bg-gray-100 text-gray-600 border-gray-200"
+                    }`}
                 >
                   {partner.status}
                 </span>
@@ -144,9 +144,8 @@ export default function ChannelPartnerProfilePage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 pb-3.5 text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
-                  active ? "border-[#2563EB] text-[#2563EB]" : "border-transparent text-[#6B7280] hover:text-[#374151]"
-                }`}
+                className={`flex items-center gap-2 pb-3.5 text-sm font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap ${active ? "border-[#2563EB] text-[#2563EB]" : "border-transparent text-[#6B7280] hover:text-[#374151]"
+                  }`}
               >
                 <Icon size={16} />
                 <span>{tab.label}</span>
@@ -1105,6 +1104,72 @@ function SettingsTab({ partner, updatePartner, deletePartner }: { partner: any; 
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // ── Login Credentials State ──
+  const [credsLoading, setCredsLoading] = useState(true);
+  const [existingCreds, setExistingCreds] = useState<{ hasLogin: boolean; email?: string; userId?: string } | null>(null);
+  const [credEmail, setCredEmail] = useState("");
+  const [credPassword, setCredPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [credsSaving, setCredsSaving] = useState(false);
+  const [credsSuccess, setCredsSuccess] = useState("");
+  const [credsError, setCredsError] = useState("");
+
+  useEffect(() => {
+    const fetchCreds = async () => {
+      try {
+        setCredsLoading(true);
+        const res = await fetch(`/api/channel-partners/${partner._id}/credentials`);
+        if (res.ok) {
+          const data = await res.json();
+          setExistingCreds(data);
+          if (data.email) setCredEmail(data.email);
+        }
+      } catch (e) {
+        console.error("Failed to load credentials:", e);
+      } finally {
+        setCredsLoading(false);
+      }
+    };
+    fetchCreds();
+  }, [partner._id]);
+
+  const generatePassword = () => {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$!";
+    let pwd = "";
+    for (let i = 0; i < 12; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setCredPassword(pwd);
+    setShowPassword(true);
+  };
+
+  const handleSaveCreds = async () => {
+    setCredsError("");
+    setCredsSuccess("");
+    if (!credEmail) { setCredsError("Email is required."); return; }
+    if (!existingCreds?.hasLogin && !credPassword) { setCredsError("Password is required to create a new login."); return; }
+
+    setCredsSaving(true);
+    try {
+      const method = existingCreds?.hasLogin ? "PATCH" : "POST";
+      const res = await fetch(`/api/channel-partners/${partner._id}/credentials`, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: credEmail, password: credPassword || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed.");
+      setCredsSuccess(existingCreds?.hasLogin ? "Credentials updated successfully!" : "Login created successfully!");
+      setExistingCreds({ hasLogin: true, email: credEmail });
+      setCredPassword("");
+      setShowPassword(false);
+    } catch (err: any) {
+      setCredsError(err.message);
+    } finally {
+      setCredsSaving(false);
+    }
+  };
+
   const handleToggleStatus = async () => {
     setUpdating(true);
     try {
@@ -1135,6 +1200,134 @@ function SettingsTab({ partner, updatePartner, deletePartner }: { partner: any; 
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Left Operations Card */}
       <div className="lg:col-span-2 space-y-6">
+
+        {/* ── Login Credentials Card ── */}
+        <div className="card p-6 space-y-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-[#111827] text-base flex items-center gap-2">
+                <KeyRound size={17} className="text-[#2563EB]" />
+                Login Credentials
+              </h3>
+              <p className="text-sm text-[#6B7280] mt-0.5">
+                {existingCreds?.hasLogin
+                  ? "Manage the login email and password for this channel partner's portal access."
+                  : "Create a portal login so this channel partner can access the system."}
+              </p>
+            </div>
+            {existingCreds?.hasLogin && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <CheckCircle size={11} />
+                Login Active
+              </span>
+            )}
+            {!credsLoading && !existingCreds?.hasLogin && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                <UserPlus size={11} />
+                No Login Yet
+              </span>
+            )}
+          </div>
+
+          {credsLoading ? (
+            <div className="flex items-center gap-2 text-sm text-[#6B7280] py-4">
+              <Loader2 size={16} className="animate-spin" />
+              <span>Loading credentials...</span>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {credsError && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl flex items-center gap-2">
+                  <AlertCircle size={14} />
+                  <span>{credsError}</span>
+                </div>
+              )}
+              {credsSuccess && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold rounded-xl flex items-center gap-2">
+                  <CheckCircle size={14} />
+                  <span>{credsSuccess}</span>
+                </div>
+              )}
+
+              {/* Email field */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#374151] uppercase tracking-wide">Login Email / Username</label>
+                <div className="relative">
+                  <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+                  <input
+                    type="email"
+                    value={credEmail}
+                    onChange={(e) => setCredEmail(e.target.value)}
+                    placeholder="e.g. partner@company.com"
+                    className="w-full pl-9 pr-4 py-2.5 border border-[#D1D5DB] rounded-xl text-sm focus:outline-none focus:border-[#3B82F6] font-medium text-[#111827] placeholder-[#9CA3AF]"
+                  />
+                </div>
+              </div>
+
+              {/* Password field */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[#374151] uppercase tracking-wide">
+                  {existingCreds?.hasLogin ? "New Password (leave blank to keep current)" : "Password *"}
+                </label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <KeyRound size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={credPassword}
+                      onChange={(e) => setCredPassword(e.target.value)}
+                      placeholder={existingCreds?.hasLogin ? "Enter new password to reset..." : "Set a strong password..."}
+                      className="w-full pl-9 pr-10 py-2.5 border border-[#D1D5DB] rounded-xl text-sm focus:outline-none focus:border-[#3B82F6] font-mono text-[#111827] placeholder-[#9CA3AF]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#111827] transition-colors"
+                      title={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+                  {/* Auto-generate button */}
+                  <button
+                    type="button"
+                    onClick={generatePassword}
+                    title="Auto-generate a strong password"
+                    className="flex items-center gap-1.5 px-3.5 py-2.5 border border-[#D1D5DB] rounded-xl text-xs font-semibold text-[#374151] hover:bg-[#F9FAFB] hover:border-[#2563EB] hover:text-[#2563EB] transition-all"
+                  >
+                    <RefreshCw size={13} />
+                    <span>Generate</span>
+                  </button>
+                </div>
+                {credPassword && (
+                  <p className="text-[11px] text-[#6B7280] mt-1">
+                    Password strength: {credPassword.length >= 12 ? "✅ Strong" : credPassword.length >= 8 ? "⚠️ Moderate" : "❌ Weak"}
+                  </p>
+                )}
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  onClick={handleSaveCreds}
+                  disabled={credsSaving}
+                  className="flex items-center gap-1.5 px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:bg-blue-300 text-white text-xs font-bold rounded-xl transition-all shadow-sm"
+                >
+                  {credsSaving && <Loader2 size={13} className="animate-spin" />}
+                  <span>{existingCreds?.hasLogin ? "Update Credentials" : "Create Login Account"}</span>
+                </button>
+                {existingCreds?.hasLogin && credPassword && (
+                  <p className="text-[11px] text-amber-600 font-medium flex items-center gap-1">
+                    <AlertCircle size={11} />
+                    Saving will immediately reset the partner's password.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Partner Status Toggle */}
         <div className="card p-6 space-y-6">
           <div>
             <h3 className="font-bold text-[#111827] text-base">Partner Status Operations</h3>
@@ -1151,11 +1344,10 @@ function SettingsTab({ partner, updatePartner, deletePartner }: { partner: any; 
             <button
               onClick={handleToggleStatus}
               disabled={updating}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
-                partner.status === "Active"
-                  ? "bg-red-50 text-red-700 hover:bg-red-100/70"
-                  : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100/70"
-              }`}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${partner.status === "Active"
+                ? "bg-red-50 text-red-700 hover:bg-red-100/70"
+                : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100/70"
+                }`}
             >
               {updating && <Loader2 size={13} className="animate-spin" />}
               <span>{partner.status === "Active" ? "Deactivate Partner" : "Activate Partner"}</span>

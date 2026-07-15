@@ -8,7 +8,10 @@ interface LeadFiltersProps {
   setStatus: (v: string) => void;
 }
 
-const statuses = ["All", "New", "Open", "Processing", "Approved", "Disbursed", "Rejected", "Closed"];
+const statuses = [
+  "All", "New", "Assigned", "Not Connected", "Not Interested",
+  "Document Pending", "Processing", "Approved", "Rejected", "Disbursed",
+];
 
 export function LeadFilters({ search, setSearch, status, setStatus }: LeadFiltersProps) {
   return (

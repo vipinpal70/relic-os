@@ -134,7 +134,7 @@ export default function TeamPage() {
   const openEditModal = (user: EnrichedUser) => {
     setEditingUser(user);
     setActiveTab("credentials");
-    
+
     // Populate form data
     setFormData({
       name: user.name,
@@ -188,7 +188,7 @@ export default function TeamPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Basic validations
     if (!formData.name || !formData.email || (!editingUser && !formData.password)) {
       alert("Please fill all required credentials fields.");
@@ -299,9 +299,8 @@ export default function TeamPage() {
               <button
                 key={r}
                 onClick={() => setRoleFilter(r)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  roleFilter === r ? "bg-[#2563EB] text-white shadow-sm" : "text-[#374151] hover:bg-[#F9FAFB]"
-                }`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${roleFilter === r ? "bg-[#2563EB] text-white shadow-sm" : "text-[#374151] hover:bg-[#F9FAFB]"
+                  }`}
               >
                 {r}
               </button>
@@ -310,7 +309,7 @@ export default function TeamPage() {
         </div>
 
         {/* Data Table */}
-        <div className="bg-white border border-[#E5E7EB] rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white border border-[#E5E7EB] rounded-2xl shadow-sm overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
@@ -371,7 +370,7 @@ export default function TeamPage() {
                         <span className="text-xs text-[#9CA3AF] italic">No tag</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <td className="px-6 py-4 whitespace-nowrap text-right relative z-10">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => openEditModal(user)}
@@ -426,22 +425,20 @@ export default function TeamPage() {
               <div className="flex border-b border-[#E5E7EB] px-6">
                 <button
                   onClick={() => setActiveTab("credentials")}
-                  className={`flex items-center gap-2 py-3 px-4 text-sm font-semibold border-b-2 transition-all ${
-                    activeTab === "credentials"
-                      ? "border-[#2563EB] text-[#2563EB]"
-                      : "border-transparent text-[#4B5563] hover:text-[#111827]"
-                  }`}
+                  className={`flex items-center gap-2 py-3 px-4 text-sm font-semibold border-b-2 transition-all ${activeTab === "credentials"
+                    ? "border-[#2563EB] text-[#2563EB]"
+                    : "border-transparent text-[#4B5563] hover:text-[#111827]"
+                    }`}
                 >
                   <Lock size={15} />
                   Login & Credentials
                 </button>
                 <button
                   onClick={() => setActiveTab("profile")}
-                  className={`flex items-center gap-2 py-3 px-4 text-sm font-semibold border-b-2 transition-all ${
-                    activeTab === "profile"
-                      ? "border-[#2563EB] text-[#2563EB]"
-                      : "border-transparent text-[#4B5563] hover:text-[#111827]"
-                  }`}
+                  className={`flex items-center gap-2 py-3 px-4 text-sm font-semibold border-b-2 transition-all ${activeTab === "profile"
+                    ? "border-[#2563EB] text-[#2563EB]"
+                    : "border-transparent text-[#4B5563] hover:text-[#111827]"
+                    }`}
                 >
                   <FileText size={15} />
                   Functional Profile

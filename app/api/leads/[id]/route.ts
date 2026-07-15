@@ -139,12 +139,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       hasChanges = true;
     }
 
-    // Map status (Processing -> Pending)
     if (body.status !== undefined) {
       let statusToSet = body.status;
-      if (statusToSet === "Processing") {
-        statusToSet = "Pending";
-      }
       if (statusToSet !== c.status) {
         c.status = statusToSet;
         hasChanges = true;

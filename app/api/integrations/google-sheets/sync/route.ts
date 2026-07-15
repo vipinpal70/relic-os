@@ -222,7 +222,10 @@ export async function POST() {
         }
       }
 
-      // 4. Find or update Case
+      // 4. Find or create Case — preserve existing status on re-sync
+      const existingCase = await Case.findOne({ applicationNumber: application_number });
+      const isNew = !existingCase;
+
       const caseDoc = await Case.findOneAndUpdate(
         { applicationNumber: application_number },
         {
@@ -235,26 +238,31 @@ export async function POST() {
             bankId,
             channelPartnerId,
             assignedUserId,
-            status,
             disbursedAmount: disbursed_amount,
             approvedDate: approved_date,
             disbursedDate: disbursed_date,
             remarks,
-            createdAt: created_at,
             isDeleted: false,
+          },
+          // Only set status and createdAt when inserting a brand-new record
+          $setOnInsert: {
+            status,
+            createdAt: created_at,
           },
         },
         { upsert: true, new: true }
       );
 
-      // Create an activity log if this was newly imported
-      await ActivityLog.create({
-        entityType: "Case",
-        entityId: caseDoc._id,
-        action: "Google Sheet Import",
-        details: `Imported applicant details for ${applicant_name} via Sync.`,
-        performedBy: "Google Sheets Sync",
-      });
+      // Only log an activity entry when a new record is created (not on re-sync updates)
+      if (isNew) {
+        await ActivityLog.create({
+          entityType: "Case",
+          entityId: caseDoc._id,
+          action: "Google Sheet Import",
+          details: `Imported applicant details for ${applicant_name} via Sync.`,
+          performedBy: "Google Sheets Sync",
+        });
+      }
 
       importedCount++;
     }

@@ -33,8 +33,12 @@ export function timeAgo(date: string): string {
 
 export const statusColors: Record<string, { bg: string; text: string }> = {
   New: { bg: "#EFF6FF", text: "#2563EB" },
-  Open: { bg: "#EEF2FF", text: "#4F46E5" },
+  Assigned: { bg: "#EEF2FF", text: "#4F46E5" },
+  "Not Connected": { bg: "#FEF9C3", text: "#92400E" },
+  "Not Interested": { bg: "#FEE2E2", text: "#991B1B" },
+  "Document Pending": { bg: "#FFF7ED", text: "#C2410C" },
   Processing: { bg: "#FEF3C7", text: "#B45309" },
+  Open: { bg: "#EEF2FF", text: "#4F46E5" },
   Approved: { bg: "#DCFCE7", text: "#15803D" },
   Disbursed: { bg: "#D1FAE5", text: "#047857" },
   Rejected: { bg: "#FEE2E2", text: "#B91C1C" },
