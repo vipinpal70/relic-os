@@ -33,7 +33,7 @@ export function LoginForm() {
             <Sparkles className="w-3.5 h-3.5 text-blue-300" />
             Enterprise CRM & Origination Suite
           </div>
-          <h1 className="text-4xl lg:text-5xl font-extrabold leading-tight tracking-tight">
+          <h1 className="text-4xl lg:text-5xl font-semibold leading-tight tracking-tight">
             Streamline your loan operations from lead to disbursement.
           </h1>
           <p className="text-blue-100 text-base leading-relaxed">
@@ -56,10 +56,6 @@ export function LoginForm() {
         {/* Bottom footer note */}
         <div className="text-xs text-blue-200/80 relative z-10 flex items-center justify-between">
           <span>&copy; {new Date().getFullYear()} Relic OS. All rights reserved.</span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            Active Session Guard v2.0
-          </span>
         </div>
       </div>
 
@@ -77,7 +73,7 @@ export function LoginForm() {
                 <p className="text-[10px] text-[#9CA3AF] tracking-wider uppercase font-semibold">Loan Management</p>
               </div>
             </div>
-            <h2 className="text-3xl font-extrabold text-[#111827] tracking-tight">Sign In</h2>
+            <h2 className="text-3xl font-bold text-[#111827] tracking-tight">Sign In</h2>
             <p className="text-sm text-[#6B7280]">
               Welcome back! Access your workspace and manage active files.
             </p>
@@ -148,25 +144,6 @@ export function LoginForm() {
               )}
             </button>
           </form>
-
-          {/* Test Credentials Helper */}
-          <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-xl space-y-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#1D4ED8] flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
-              Demo Credentials
-            </span>
-            <p className="text-xs text-[#475569] leading-relaxed">
-              We have pre-seeded the database for you. Log in using the admin account:
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-xs font-mono text-[#334155] bg-white p-2 rounded-lg border border-blue-100/50">
-              <div>
-                <span className="text-[#9CA3AF]">Email:</span> <span className="font-semibold select-all">vikash@relicos.com</span>
-              </div>
-              <div>
-                <span className="text-[#9CA3AF]">Pass:</span> <span className="font-semibold select-all">password123</span>
-              </div>
-            </div>
-          </div>
 
           {/* Footer toggle */}
           <p className="text-center text-sm text-[#6B7280]">
