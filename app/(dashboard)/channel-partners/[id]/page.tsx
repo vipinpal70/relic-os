@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
   useChannelPartnerDetails,
   useChannelPartnerAnalytics,
-  useChannelPartnerCases,
+  useChannelPartnerLeads,
   useChannelPartnerTransactions,
   useChannelPartnerCommissions
 } from "@/lib/hooks/useChannelPartners";
@@ -122,7 +122,7 @@ export default function ChannelPartnerProfilePage() {
           <div className="grid grid-cols-3 gap-6 divide-x divide-gray-100 md:border-l md:border-gray-100 md:pl-8">
             <div className="px-2">
               <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wide">Total Cases</p>
-              <p className="text-lg font-bold text-[#111827] mt-0.5">{stats?.allTime.totalCases || 0}</p>
+              <p className="text-lg font-bold text-[#111827] mt-0.5">{stats?.allTime.totalLeads || 0}</p>
             </div>
             <div className="pl-4">
               <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wide">Disbursed Volume</p>
@@ -552,7 +552,7 @@ function CasesTab({ partnerId }: { partnerId: string }) {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   // Fetch partner-specific cases
-  const { data: casesQuery, isLoading } = useChannelPartnerCases(partnerId, {
+  const { data: casesQuery, isLoading } = useChannelPartnerLeads(partnerId, {
     search: searchTerm,
     status,
     loanType,

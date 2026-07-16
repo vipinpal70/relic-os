@@ -4,7 +4,7 @@ import User from "@/lib/models/User";
 import TeamProfile from "@/lib/models/TeamProfile";
 import ChannelPartner from "@/lib/models/ChannelPartner";
 import bcrypt from "bcryptjs";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, canManageTeam } from "@/lib/auth";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -12,8 +12,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const { id } = await params;
 
     const session = await getSessionUser();
-    if (!session || session.user.role !== "Admin") {
-      return NextResponse.json({ error: "Access denied. Only Admins can manage the team." }, { status: 403 });
+    if (!session || !canManageTeam(session.user)) {
+      return NextResponse.json({ error: "Access denied. Only Admins or users tagged 'admin' can manage the team." }, { status: 403 });
     }
 
     const body = await request.json();
@@ -160,8 +160,8 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     const { id } = await params;
 
     const session = await getSessionUser();
-    if (!session || session.user.role !== "Admin") {
-      return NextResponse.json({ error: "Access denied. Only Admins can manage the team." }, { status: 403 });
+    if (!session || !canManageTeam(session.user)) {
+      return NextResponse.json({ error: "Access denied. Only Admins or users tagged 'admin' can manage the team." }, { status: 403 });
     }
 
     const user = await User.findById(id);

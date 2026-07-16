@@ -7,6 +7,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { LeadFilters } from "@/components/leads/LeadFilters";
 import { LeadTable } from "@/components/leads/LeadTable";
+import { AddLeadModal } from "@/components/leads/AddLeadModal";
 
 interface IntegrationConfig {
   googleSheetUrl: string;
@@ -23,19 +24,25 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
+  const [bankFilter, setBankFilter] = useState("All");
+  const [loanTypeFilter, setLoanTypeFilter] = useState("All");
 
   const [integration, setIntegration] = useState<IntegrationConfig | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const fetchLeads = async () => {
     try {
       const res = await fetch("/api/leads");
       if (res.ok) {
         const data = await res.json();
-        setLeadsList(data);
+        const list = Array.isArray(data) ? data : (data && Array.isArray(data.data) ? data.data : []);
+        setLeadsList(list);
+      } else {
+        console.error("[fetchLeads] Fetch response failed:", res.status, res.statusText);
       }
     } catch (error) {
-      console.error("Failed to load leads:", error);
+      console.error("[fetchLeads] Failed to load leads:", error);
     } finally {
       setLoading(false);
     }
@@ -82,16 +89,86 @@ export default function LeadsPage() {
     }
   };
 
+  const uniqueBanks = useMemo(() => {
+    if (!Array.isArray(leadsList)) return ["All"];
+    const banks = leadsList.map((l) => l.bank).filter(Boolean);
+    return ["All", ...Array.from(new Set(banks))];
+  }, [leadsList]);
+
+  const uniqueLoanTypes = useMemo(() => {
+    if (!Array.isArray(leadsList)) return ["All"];
+    const types = leadsList.map((l) => l.loan_type).filter(Boolean);
+    return ["All", ...Array.from(new Set(types))];
+  }, [leadsList]);
+
   const filtered = useMemo(() => {
+    if (!Array.isArray(leadsList)) return [];
     return leadsList.filter((l) => {
+      const applicantName = l.applicant_name || "";
+      const phone = l.phone || "";
+      const appNumber = l.application_number || "";
+
       const matchSearch =
-        l.applicant_name.toLowerCase().includes(search.toLowerCase()) ||
-        l.phone.includes(search) ||
-        l.application_number.toLowerCase().includes(search.toLowerCase());
+        applicantName.toLowerCase().includes(search.toLowerCase()) ||
+        phone.includes(search) ||
+        appNumber.toLowerCase().includes(search.toLowerCase());
       const matchStatus = status === "All" || l.status === status;
-      return matchSearch && matchStatus;
+      const matchBank = bankFilter === "All" || l.bank === bankFilter;
+      const matchLoanType = loanTypeFilter === "All" || l.loan_type === loanTypeFilter;
+      return matchSearch && matchStatus && matchBank && matchLoanType;
     });
-  }, [leadsList, search, status]);
+  }, [leadsList, search, status, bankFilter, loanTypeFilter]);
+
+  // CSV Export — exports the currently filtered rows
+  const exportToCSV = () => {
+    if (filtered.length === 0) {
+      alert("No leads to export for the current filters.");
+      return;
+    }
+
+    // Quote every value; escape embedded quotes so commas/newlines in data don't break columns
+    const escapeCell = (value: any) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+
+    const headers = [
+      "Application Number", "Applicant Name", "Email", "Phone", "Loan Type",
+      "Loan Amount", "Bank", "Channel Partner", "Assigned To", "Source",
+      "Status", "Disbursed Amount", "Approved Date", "Disbursed Date",
+      "Remarks", "Created Date",
+    ];
+    const rows = filtered.map((l) => [
+      l.application_number,
+      l.applicant_name,
+      l.email,
+      l.phone,
+      l.loan_type,
+      l.loan_amount,
+      l.bank,
+      l.channel_partner,
+      l.assigned_user,
+      l.lead_source,
+      l.status,
+      l.disbursed_amount,
+      l.approved_date,
+      l.disbursed_date,
+      l.remarks,
+      l.created_at ? new Date(l.created_at).toLocaleDateString("en-IN") : "",
+    ]);
+
+    const csv = [headers, ...rows]
+      .map((row) => row.map(escapeCell).join(","))
+      .join("\r\n");
+
+    // BOM so Excel opens UTF-8 content correctly
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `leads_export_${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   // Formatter for time
   const getSyncStatusText = () => {
@@ -122,11 +199,17 @@ export default function LeadsPage() {
           subtitle="Manage and track all loan applications"
           actions={
             <>
-              <button className="flex items-center gap-2 px-4 py-2 border border-[#D1D5DB] rounded-lg text-sm text-[#374151] bg-white hover:bg-[#F9FAFB] transition-colors">
+              <button
+                onClick={exportToCSV}
+                className="flex items-center gap-2 px-4 py-2 border border-[#D1D5DB] rounded-lg text-sm text-[#374151] bg-white hover:bg-[#F9FAFB] transition-colors"
+              >
                 <Upload size={15} />
-                Import
+                Export
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg text-sm font-medium hover:bg-[#1D4ED8] transition-colors">
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg text-sm font-medium hover:bg-[#1D4ED8] transition-colors"
+              >
                 <Plus size={15} />
                 Add Lead
               </button>
@@ -171,7 +254,18 @@ export default function LeadsPage() {
           )}
         </div>
 
-        <LeadFilters search={search} setSearch={setSearch} status={status} setStatus={setStatus} />
+        <LeadFilters
+          search={search}
+          setSearch={setSearch}
+          status={status}
+          setStatus={setStatus}
+          bank={bankFilter}
+          setBank={setBankFilter}
+          loanType={loanTypeFilter}
+          setLoanType={setLoanTypeFilter}
+          banks={uniqueBanks}
+          loanTypes={uniqueLoanTypes}
+        />
 
         {loading ? (
           <div className="card p-12 flex flex-col items-center justify-center gap-4 text-center">
@@ -181,6 +275,12 @@ export default function LeadsPage() {
         ) : (
           <LeadTable leads={filtered} />
         )}
+
+        <AddLeadModal
+          open={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onCreated={fetchLeads}
+        />
       </motion.div>
     </AppLayout>
   );

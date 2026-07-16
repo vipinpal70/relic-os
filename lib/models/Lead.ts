@@ -1,46 +1,88 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface ILead extends Document {
-  google_form_id?: string;
-  applicant_name: string;
+  applicationNumber: string;
+  applicantName: string;
   email: string;
   phone: string;
-  loan_amount: number;
-  loan_type: string;
-  bank?: string;
-  channel_partner?: string;
-  assigned_user?: string;
-  lead_source: string;
-  application_number: string;
-  status: string;
-  disbursed_amount: number;
-  approved_date?: string;
-  disbursed_date?: string;
+  loanAmount: number;
+  loanType: string;
+  bankId: mongoose.Types.ObjectId;
+  channelPartnerId?: mongoose.Types.ObjectId;
+  assignedUserId?: mongoose.Types.ObjectId;
+  status: "New" | "Assigned" | "Not Connected" | "Not Interested" | "Document Pending" | "Processing" | "Approved" | "Rejected" | "Disbursed" | "Pending";
+  disbursedAmount: number;
+  approvedDate?: string;
+  disbursedDate?: string;
+  
+  // Commission summary for quick access/indexing
+  bankExpectedCommission: number;
+  bankPaidCommission: number;
+  bankPendingCommission: number;
+  
+  partnerExpectedCommission: number;
+  partnerPaidCommission: number;
+  partnerPendingCommission: number;
+
   remarks?: string;
-  created_at: Date;
+  createdBy?: string;
+  updatedBy?: string;
+  isDeleted: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const LeadSchema = new Schema<ILead>(
   {
-    google_form_id: { type: String, default: "" },
-    applicant_name: { type: String, required: true },
-    email: { type: String, required: true },
-    phone: { type: String, required: true },
-    loan_amount: { type: Number, required: true },
-    loan_type: { type: String, required: true },
-    bank: { type: String, default: "" },
-    channel_partner: { type: String, default: "" },
-    assigned_user: { type: String, default: "" },
-    lead_source: { type: String, default: "Manual" },
-    application_number: { type: String, required: true, unique: true },
-    status: { type: String, default: "New" },
-    disbursed_amount: { type: Number, default: 0 },
-    approved_date: { type: String, default: "" },
-    disbursed_date: { type: String, default: "" },
-    remarks: { type: String, default: "" },
-    created_at: { type: Date, default: Date.now },
+    applicationNumber: { type: String, required: true, unique: true, uppercase: true, trim: true },
+    applicantName: { type: String, required: true, trim: true },
+    email: { type: String, required: true, lowercase: true, trim: true },
+    phone: { type: String, required: true, trim: true },
+    loanAmount: { type: Number, required: true, min: 0 },
+    loanType: { type: String, required: true },
+    bankId: { type: Schema.Types.ObjectId, ref: "Bank", required: true },
+    channelPartnerId: { type: Schema.Types.ObjectId, ref: "ChannelPartner" },
+    assignedUserId: { type: Schema.Types.ObjectId, ref: "User" },
+    status: {
+      type: String,
+      enum: [
+        "New", "Assigned", "Not Connected", "Not Interested",
+        "Document Pending", "Processing", "Approved", "Rejected", "Disbursed",
+        "Pending", // legacy value — mapped to Processing in API responses
+      ],
+      default: "New",
+    },
+    disbursedAmount: { type: Number, default: 0 },
+    approvedDate: { type: String },
+    disbursedDate: { type: String },
+
+    bankExpectedCommission: { type: Number, default: 0 },
+    bankPaidCommission: { type: Number, default: 0 },
+    bankPendingCommission: { type: Number, default: 0 },
+
+    partnerExpectedCommission: { type: Number, default: 0 },
+    partnerPaidCommission: { type: Number, default: 0 },
+    partnerPendingCommission: { type: Number, default: 0 },
+
+    remarks: { type: String },
+    createdBy: { type: String, default: "System" },
+    updatedBy: { type: String, default: "System" },
+    isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
+
+// Indexes
+LeadSchema.index({ status: 1 });
+LeadSchema.index({ bankId: 1 });
+LeadSchema.index({ channelPartnerId: 1 });
+LeadSchema.index({ assignedUserId: 1 });
+LeadSchema.index({ isDeleted: 1 });
+LeadSchema.index({ createdAt: -1 });
+
+// Compound Indexes for fast dashboard filtering
+LeadSchema.index({ bankId: 1, status: 1, isDeleted: 1 });
+LeadSchema.index({ channelPartnerId: 1, status: 1, isDeleted: 1 });
+LeadSchema.index({ loanType: 1, status: 1 });
 
 export default mongoose.models.Lead || mongoose.model<ILead>("Lead", LeadSchema);

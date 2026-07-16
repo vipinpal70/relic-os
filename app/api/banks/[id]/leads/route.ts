@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
+import { formatLead } from "@/lib/utils";
 import { verifyPermission } from "@/lib/middlewares/auth.middleware";
-import { CaseRepository } from "@/lib/repositories/case.repository";
+import { LeadRepository } from "@/lib/repositories/lead.repository";
 
-const caseRepo = new CaseRepository();
+const leadRepo = new LeadRepository();
 
 export async function GET(
   request: Request,
@@ -26,22 +27,26 @@ export async function GET(
     const sortField = searchParams.get("sortField") || "createdAt";
     const sortOrder = (searchParams.get("sortOrder") as "asc" | "desc") || "desc";
 
-    const result = await caseRepo.findAll({
+    const result = await leadRepo.findAll({
       search,
       status,
       loanType,
       startDate,
       endDate,
-      channelPartnerId: id,
+      bankId: id,
       page,
       limit,
       sortField,
       sortOrder,
     });
 
-    return NextResponse.json(result);
+    const formattedData = result.data.map(formatLead);
+    return NextResponse.json({
+      data: formattedData,
+      total: result.total,
+    });
   } catch (error: any) {
-    console.error(`Error loading cases for partner ${id}:`, error);
-    return NextResponse.json({ error: "Failed to load partner cases" }, { status: 500 });
+    console.error(`Error loading leads for bank ${id}:`, error);
+    return NextResponse.json({ error: "Failed to load bank leads" }, { status: 500 });
   }
 }

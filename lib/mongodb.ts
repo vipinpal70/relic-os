@@ -1,4 +1,11 @@
 import mongoose from "mongoose";
+import dns from "dns";
+
+// Fix Node.js DNS resolution issues on Windows when loopback is configured as primary DNS
+const currentServers = dns.getServers();
+if (currentServers.includes("127.0.0.1") || currentServers.includes("::1")) {
+  dns.setServers(["8.8.8.8", "1.1.1.1", "192.168.68.1"]);
+}
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -32,6 +39,14 @@ export async function dbConnect() {
     const opts = {
       bufferCommands: false,
     };
+
+    console.log("[dbConnect] Current DNS servers configured in Node:", dns.getServers());
+    try {
+      dns.setServers(["8.8.8.8", "1.1.1.1"]);
+      console.log("[dbConnect] Set DNS servers to [8.8.8.8, 1.1.1.1]");
+    } catch (err: any) {
+      console.error("[dbConnect] Failed to set DNS servers:", err.message);
+    }
 
     cached.promise = mongoose.connect(MONGODB_URI!, opts).then((m) => {
       return m;

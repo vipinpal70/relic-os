@@ -1,6 +1,6 @@
 import { dbConnect } from "./mongodb";
 import Integration from "./models/Integration";
-import Case from "./models/Case";
+import Lead from "./models/Lead";
 import Bank from "./models/Bank";
 import ChannelPartner from "./models/ChannelPartner";
 import User from "./models/User";
@@ -249,8 +249,8 @@ export async function runBackgroundSyncIfNeeded() {
         }
       }
 
-      // 4. Find or update Case
-      const caseDoc = await Case.findOneAndUpdate(
+      // 4. Find or update Lead
+      const leadDoc = await Lead.findOneAndUpdate(
         { applicationNumber: application_number },
         {
           $set: {
@@ -276,8 +276,8 @@ export async function runBackgroundSyncIfNeeded() {
 
       // Create an activity log if this was newly imported
       await ActivityLog.create({
-        entityType: "Case",
-        entityId: caseDoc._id,
+        entityType: "Lead",
+        entityId: leadDoc._id,
         action: "Google Sheet Import",
         details: `Imported applicant details for ${applicant_name} via Sync.`,
         performedBy: "Google Sheets Sync",

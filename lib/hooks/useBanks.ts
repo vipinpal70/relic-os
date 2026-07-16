@@ -30,11 +30,11 @@ export interface Bank {
 
 export interface BankStats {
   allTime: {
-    totalCases: number;
-    approvedCases: number;
-    rejectedCases: number;
-    pendingCases: number;
-    disbursedCases: number;
+    totalLeads: number;
+    approvedLeads: number;
+    rejectedLeads: number;
+    pendingLeads: number;
+    disbursedLeads: number;
     totalLoanAmount: number;
     disbursedAmount: number;
     commissionExpected: number;
@@ -42,7 +42,7 @@ export interface BankStats {
     commissionPending: number;
   };
   currentMonth: {
-    cases: number;
+    leads: number;
     amount: number;
     commissionExpected: number;
     commissionPaid: number;
@@ -173,13 +173,13 @@ export function useBankAnalytics(id: string, dateFilters: { startDate?: string; 
   });
 }
 
-export function useBankCases(id: string, params: any = {}) {
+export function useBankLeads(id: string, params: any = {}) {
   return useQuery({
-    queryKey: ["bankCases", id, params],
+    queryKey: ["bankLeads", id, params],
     queryFn: async () => {
       const queryStr = new URLSearchParams(params).toString();
-      const res = await fetch(`/api/banks/${id}/cases?${queryStr}`);
-      if (!res.ok) throw new Error("Failed to fetch bank cases");
+      const res = await fetch(`/api/banks/${id}/leads?${queryStr}`);
+      if (!res.ok) throw new Error("Failed to fetch bank leads");
       return res.json();
     },
     enabled: !!id,

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
-import Case from "@/lib/models/Case";
+import Lead from "@/lib/models/Lead";
 import Bank from "@/lib/models/Bank";
 import ActivityLog from "@/lib/models/ActivityLog";
 
@@ -9,23 +9,23 @@ export async function GET() {
     await dbConnect();
 
     // 1. Core Counts
-    const totalApplications = await Case.countDocuments({ isDeleted: false });
-    const openApplications = await Case.countDocuments({
+    const totalApplications = await Lead.countDocuments({ isDeleted: false });
+    const openApplications = await Lead.countDocuments({
       status: { $in: ["New", "Pending", "Approved"] },
       isDeleted: false,
     });
-    const approvedLoans = await Case.countDocuments({ status: "Approved", isDeleted: false });
-    const disbursedLoans = await Case.countDocuments({ status: "Disbursed", isDeleted: false });
+    const approvedLoans = await Lead.countDocuments({ status: "Approved", isDeleted: false });
+    const disbursedLoans = await Lead.countDocuments({ status: "Disbursed", isDeleted: false });
 
     // 2. Conversion rate
-    const approvedOrDisbursed = await Case.countDocuments({
+    const approvedOrDisbursed = await Lead.countDocuments({
       status: { $in: ["Approved", "Disbursed"] },
       isDeleted: false,
     });
     const conversionRate = totalApplications > 0 ? parseFloat(((approvedOrDisbursed / totalApplications) * 100).toFixed(1)) : 0;
 
     // 3. Commissions & Receivables
-    const commissionStats = await Case.aggregate([
+    const commissionStats = await Lead.aggregate([
       { $match: { isDeleted: false } },
       {
         $group: {
@@ -38,8 +38,8 @@ export async function GET() {
     const receivableAmount = commissionStats[0]?.receivableAmount || 0;
     const commissionPayable = commissionStats[0]?.commissionPayable || 0;
 
-    // 4. Pending Payments Count (cases where bank/partner commission is still pending)
-    const pendingPayments = await Case.countDocuments({
+    // 4. Pending Payments Count (leads where bank/partner commission is still pending)
+    const pendingPayments = await Lead.countDocuments({
       isDeleted: false,
       $or: [
         { bankPendingCommission: { $gt: 0 } },
@@ -50,7 +50,7 @@ export async function GET() {
     // 5. Today's New Leads
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const todayNewLeads = await Case.countDocuments({
+    const todayNewLeads = await Lead.countDocuments({
       createdAt: { $gte: today },
       isDeleted: false,
     });
@@ -59,7 +59,7 @@ export async function GET() {
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
-    const monthlyVolumeStats = await Case.aggregate([
+    const monthlyVolumeStats = await Lead.aggregate([
       {
         $match: {
           status: "Disbursed",
@@ -82,7 +82,7 @@ export async function GET() {
     sixMonthsAgo.setDate(1);
     sixMonthsAgo.setHours(0, 0, 0, 0);
 
-    const monthlyTrends = await Case.aggregate([
+    const monthlyTrends = await Lead.aggregate([
       {
         $match: {
           createdAt: { $gte: sixMonthsAgo },
@@ -125,7 +125,7 @@ export async function GET() {
     });
 
     // 8. Loan Type distribution (Pie Chart)
-    const loanTypeStats = await Case.aggregate([
+    const loanTypeStats = await Lead.aggregate([
       { $match: { isDeleted: false } },
       { $group: { _id: "$loanType", value: { $sum: 1 } } },
     ]);
@@ -137,7 +137,7 @@ export async function GET() {
     }));
 
     // 9. Bank Wise Disbursement (Bar Chart)
-    const bankDisbursementStats = await Case.aggregate([
+    const bankDisbursementStats = await Lead.aggregate([
       { $match: { status: "Disbursed", isDeleted: false } },
       { $group: { _id: "$bankId", amount: { $sum: "$disbursedAmount" } } },
     ]);

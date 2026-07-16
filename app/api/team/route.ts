@@ -4,7 +4,7 @@ import User from "@/lib/models/User";
 import TeamProfile from "@/lib/models/TeamProfile";
 import ChannelPartner from "@/lib/models/ChannelPartner";
 import bcrypt from "bcryptjs";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, canManageTeam } from "@/lib/auth";
 
 export async function GET() {
   try {
@@ -46,10 +46,10 @@ export async function POST(request: Request) {
   try {
     await dbConnect();
     
-    // Auth Check: Only Admins can manage team
+    // Auth Check: Admins, or users tagged "admin"
     const session = await getSessionUser();
-    if (!session || session.user.role !== "Admin") {
-      return NextResponse.json({ error: "Access denied. Only Admins can manage the team." }, { status: 403 });
+    if (!session || !canManageTeam(session.user)) {
+      return NextResponse.json({ error: "Access denied. Only Admins or users tagged 'admin' can manage the team." }, { status: 403 });
     }
 
     const body = await request.json();

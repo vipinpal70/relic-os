@@ -25,8 +25,6 @@ export function Header({ title }: HeaderProps) {
       style={{ height: "var(--header-height)", marginLeft: "var(--sidebar-width)" }}
       className="fixed top-0 right-0 left-0 bg-white border-b border-[#E5E7EB] flex items-center px-6 gap-4 z-20"
     >
-      <h2 className="text-base font-semibold text-[#111827] min-w-0 truncate">{title}</h2>
-
       <div className="flex-1 max-w-sm ml-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />

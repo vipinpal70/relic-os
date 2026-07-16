@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { ChannelPartnerRepository } from "@/lib/repositories/channel-partner.repository";
 import { CommissionService } from "./commission.service";
 import { IChannelPartner } from "@/lib/models/ChannelPartner";
-import Case from "@/lib/models/Case";
+import Lead from "@/lib/models/Lead";
 import ActivityLog from "@/lib/models/ActivityLog";
 
 export class ChannelPartnerService {
@@ -87,17 +87,17 @@ export class ChannelPartnerService {
 
     const cpId = new mongoose.Types.ObjectId(partnerId);
 
-    // Get case metrics for Channel Partner (total cases, approved, rejected, pending, disbursed, amounts, commissions)
+    // Get lead metrics for Channel Partner (total leads, approved, rejected, pending, disbursed, amounts, commissions)
     const statsPipeline = [
       { $match: { channelPartnerId: cpId, isDeleted: false } },
       {
         $group: {
           _id: null,
-          totalCases: { $sum: 1 },
-          approvedCases: { $sum: { $cond: [{ $eq: ["$status", "Approved"] }, 1, 0] } },
-          rejectedCases: { $sum: { $cond: [{ $eq: ["$status", "Rejected"] }, 1, 0] } },
-          pendingCases: { $sum: { $cond: [{ $in: ["$status", ["New", "Pending"]] }, 1, 0] } },
-          disbursedCases: { $sum: { $cond: [{ $eq: ["$status", "Disbursed"] }, 1, 0] } },
+          totalLeads: { $sum: 1 },
+          approvedLeads: { $sum: { $cond: [{ $eq: ["$status", "Approved"] }, 1, 0] } },
+          rejectedLeads: { $sum: { $cond: [{ $eq: ["$status", "Rejected"] }, 1, 0] } },
+          pendingLeads: { $sum: { $cond: [{ $in: ["$status", ["New", "Pending"]] }, 1, 0] } },
+          disbursedLeads: { $sum: { $cond: [{ $eq: ["$status", "Disbursed"] }, 1, 0] } },
           totalLoanAmount: { $sum: "$loanAmount" },
           disbursedAmount: { $sum: "$disbursedAmount" },
           commissionExpected: { $sum: "$partnerExpectedCommission" },
@@ -118,7 +118,7 @@ export class ChannelPartnerService {
       {
         $group: {
           _id: null,
-          cases: { $sum: 1 },
+          leads: { $sum: 1 },
           amount: { $sum: "$loanAmount" },
           commissionExpected: { $sum: "$partnerExpectedCommission" },
           commissionPaid: { $sum: "$partnerPaidCommission" },
@@ -128,16 +128,16 @@ export class ChannelPartnerService {
     ];
 
     const [allTimeStats, currentMonthStats] = await Promise.all([
-      Case.aggregate(statsPipeline),
-      Case.aggregate(currentMonthPipeline),
+      Lead.aggregate(statsPipeline),
+      Lead.aggregate(currentMonthPipeline),
     ]);
 
     const defaultAllTime = {
-      totalCases: 0,
-      approvedCases: 0,
-      rejectedCases: 0,
-      pendingCases: 0,
-      disbursedCases: 0,
+      totalLeads: 0,
+      approvedLeads: 0,
+      rejectedLeads: 0,
+      pendingLeads: 0,
+      disbursedLeads: 0,
       totalLoanAmount: 0,
       disbursedAmount: 0,
       commissionExpected: 0,
@@ -146,7 +146,7 @@ export class ChannelPartnerService {
     };
 
     const defaultMonth = {
-      cases: 0,
+      leads: 0,
       amount: 0,
       commissionExpected: 0,
       commissionPaid: 0,

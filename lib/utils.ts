@@ -55,3 +55,31 @@ export const statusColors: Record<string, { bg: string; text: string }> = {
   "Channel Partner": { bg: "#FEF3C7", text: "#B45309" },
   "Invoice Generated": { bg: "#EEF2FF", text: "#4F46E5" },
 };
+
+export function formatLead(c: any): any {
+  if (!c) return null;
+  const obj = typeof c.toObject === "function" ? c.toObject() : c;
+  return {
+    id: obj._id ? obj._id.toString() : (obj.id || "").toString(),
+    google_form_id: obj.googleFormId || "",
+    applicant_name: obj.applicantName || "",
+    email: obj.email || "",
+    phone: obj.phone || "",
+    loan_amount: obj.loanAmount || 0,
+    loan_type: obj.loanType || "",
+    bank: obj.bankId?.bankName || "",
+    bank_id: obj.bankId?._id?.toString() || (obj.bankId && !obj.bankId.bankName ? obj.bankId.toString() : ""),
+    channel_partner: obj.channelPartnerId?.companyName || obj.channelPartnerId?.name || "",
+    channel_partner_id: obj.channelPartnerId?._id?.toString() || (obj.channelPartnerId && !obj.channelPartnerId.name ? obj.channelPartnerId.toString() : ""),
+    assigned_user: obj.assignedUserId?.name || "",
+    assigned_user_id: obj.assignedUserId?._id?.toString() || (obj.assignedUserId && !obj.assignedUserId.name ? obj.assignedUserId.toString() : ""),
+    lead_source: obj.createdBy === "System" ? "Sync" : "Manual",
+    application_number: obj.applicationNumber || "",
+    status: obj.status === "Pending" ? "Processing" : (obj.status || "New"),
+    disbursed_amount: obj.disbursedAmount || 0,
+    approved_date: obj.approvedDate || "",
+    disbursed_date: obj.disbursedDate || "",
+    remarks: obj.remarks || "",
+    created_at: obj.createdAt ? new Date(obj.createdAt).toISOString() : "",
+  };
+}

@@ -1,14 +1,14 @@
 import mongoose from "mongoose";
-import { CaseRepository } from "@/lib/repositories/case.repository";
+import { LeadRepository } from "@/lib/repositories/lead.repository";
 import { CommissionRepository } from "@/lib/repositories/commission.repository";
 import Bank, { ICommissionRule } from "@/lib/models/Bank";
 import ChannelPartner from "@/lib/models/ChannelPartner";
-import Case from "@/lib/models/Case";
+import Lead from "@/lib/models/Lead";
 import Commission from "@/lib/models/Commission";
 import ActivityLog from "@/lib/models/ActivityLog";
 
 export class CommissionService {
-  private caseRepo = new CaseRepository();
+  private leadRepo = new LeadRepository();
   private commissionRepo = new CommissionRepository();
 
   /**
@@ -63,18 +63,18 @@ export class CommissionService {
   }
 
   /**
-   * Calculates and saves commissions for a case
+   * Calculates and saves commissions for a lead
    */
-  async calculateCaseCommissions(caseId: string, performedBy: string = "System"): Promise<void> {
-    const loanCase = await this.caseRepo.findById(caseId);
-    if (!loanCase) throw new Error("Case not found");
+  async calculateLeadCommissions(leadId: string, performedBy: string = "System"): Promise<void> {
+    const lead = await this.leadRepo.findById(leadId);
+    if (!lead) throw new Error("Lead not found");
 
-    const dateStr = this.formatDate(loanCase.createdAt);
-    const loanAmount = loanCase.loanAmount;
-    const loanType = loanCase.loanType;
+    const dateStr = this.formatDate(lead.createdAt);
+    const loanAmount = lead.loanAmount;
+    const loanType = lead.loanType;
 
     // 1. Calculate Bank Commission
-    const bank = await Bank.findById(loanCase.bankId);
+    const bank = await Bank.findById(lead.bankId);
     let bankExpected = 0;
     let bankRate = 0;
     let bankCommType: "Fixed" | "Percentage" = "Percentage";
@@ -91,8 +91,8 @@ export class CommissionService {
     let partnerRate = 0;
     let partnerCommType: "Fixed" | "Percentage" = "Percentage";
 
-    if (loanCase.channelPartnerId) {
-      const partner = await ChannelPartner.findById(loanCase.channelPartnerId);
+    if (lead.channelPartnerId) {
+      const partner = await ChannelPartner.findById(lead.channelPartnerId);
       if (partner && partner.status === "Active") {
         const calc = this.calculateCommissionAmount(loanAmount, loanType, partner.commissionTable, dateStr);
         partnerExpected = calc.amount;
@@ -102,15 +102,15 @@ export class CommissionService {
     }
 
     // 3. Upsert Bank Commission document
-    const bankComm = await this.commissionRepo.findOne({ caseId: loanCase._id, entityType: "Bank" });
+    const bankComm = await this.commissionRepo.findOne({ caseId: lead._id, entityType: "Bank" });
     const bankPaid = bankComm ? bankComm.paidCommission : 0;
     const bankPending = Math.max(0, bankExpected - bankPaid);
     const bankStatus = bankPending === 0 ? "Paid" : bankPaid > 0 ? "Partially Paid" : "Unpaid";
 
-    await this.commissionRepo.upsert(loanCase._id.toString(), "Bank", {
-      caseId: loanCase._id,
+    await this.commissionRepo.upsert(lead._id.toString(), "Bank", {
+      caseId: lead._id,
       entityType: "Bank",
-      entityId: loanCase.bankId,
+      entityId: lead.bankId,
       rate: bankRate,
       commissionType: bankCommType,
       expectedCommission: bankExpected,
@@ -123,19 +123,19 @@ export class CommissionService {
     // 4. Upsert Channel Partner Commission document if CP exists
     let cpPaid = 0;
     let cpPending = 0;
-    if (loanCase.channelPartnerId) {
+    if (lead.channelPartnerId) {
       const cpComm = await this.commissionRepo.findOne({
-        caseId: loanCase._id,
+        caseId: lead._id,
         entityType: "ChannelPartner",
       });
       cpPaid = cpComm ? cpComm.paidCommission : 0;
       cpPending = Math.max(0, partnerExpected - cpPaid);
       const cpStatus = cpPending === 0 ? "Paid" : cpPaid > 0 ? "Partially Paid" : "Unpaid";
 
-      await this.commissionRepo.upsert(loanCase._id.toString(), "ChannelPartner", {
-        caseId: loanCase._id,
+      await this.commissionRepo.upsert(lead._id.toString(), "ChannelPartner", {
+        caseId: lead._id,
         entityType: "ChannelPartner",
-        entityId: loanCase.channelPartnerId,
+        entityId: lead.channelPartnerId,
         rate: partnerRate,
         commissionType: partnerCommType,
         expectedCommission: partnerExpected,
@@ -146,9 +146,9 @@ export class CommissionService {
       });
     }
 
-    // 5. Sync back to Case document
-    await Case.updateOne(
-      { _id: loanCase._id },
+    // 5. Sync back to Lead document
+    await Lead.updateOne(
+      { _id: lead._id },
       {
         $set: {
           bankExpectedCommission: bankExpected,
@@ -166,10 +166,10 @@ export class CommissionService {
    * Recalculates all commissions for a Bank
    */
   async recalculateBankCommissions(bankId: string, performedBy: string): Promise<number> {
-    const cases = await Case.find({ bankId, isDeleted: false });
+    const leads = await Lead.find({ bankId, isDeleted: false });
     let count = 0;
-    for (const c of cases) {
-      await this.calculateCaseCommissions(c._id.toString(), performedBy);
+    for (const lead of leads) {
+      await this.calculateLeadCommissions(lead._id.toString(), performedBy);
       count++;
     }
 
@@ -177,7 +177,7 @@ export class CommissionService {
       entityType: "Bank",
       entityId: new mongoose.Types.ObjectId(bankId),
       action: "Commissions Recalculated",
-      details: `Recalculated commissions for ${count} cases due to rule updates.`,
+      details: `Recalculated commissions for ${count} leads due to rule updates.`,
       performedBy,
     });
 
@@ -188,10 +188,10 @@ export class CommissionService {
    * Recalculates all commissions for a Channel Partner
    */
   async recalculatePartnerCommissions(partnerId: string, performedBy: string): Promise<number> {
-    const cases = await Case.find({ channelPartnerId: partnerId, isDeleted: false });
+    const leads = await Lead.find({ channelPartnerId: partnerId, isDeleted: false });
     let count = 0;
-    for (const c of cases) {
-      await this.calculateCaseCommissions(c._id.toString(), performedBy);
+    for (const lead of leads) {
+      await this.calculateLeadCommissions(lead._id.toString(), performedBy);
       count++;
     }
 
@@ -199,7 +199,7 @@ export class CommissionService {
       entityType: "ChannelPartner",
       entityId: new mongoose.Types.ObjectId(partnerId),
       action: "Commissions Recalculated",
-      details: `Recalculated commissions for ${count} cases due to rule updates.`,
+      details: `Recalculated commissions for ${count} leads due to rule updates.`,
       performedBy,
     });
 
@@ -247,13 +247,13 @@ export class CommissionService {
     commission.updatedBy = params.performedBy;
     await commission.save();
 
-    // Sync to Case document
+    // Sync to Lead document
     const updateField =
       commission.entityType === "Bank"
         ? { bankPaidCommission: newPaid, bankPendingCommission: newPending }
         : { partnerPaidCommission: newPaid, partnerPendingCommission: newPending };
 
-    await Case.updateOne({ _id: commission.caseId }, { $set: updateField });
+    await Lead.updateOne({ _id: commission.caseId }, { $set: updateField });
 
     // Log Activity
     await ActivityLog.create({

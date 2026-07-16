@@ -209,7 +209,7 @@ export default function BanksPage() {
       b.managerName || "",
       b.phone || "",
       b.email || "",
-      b.stats.totalCases,
+      b.stats.totalLeads,
       b.stats.loanAmount,
       b.stats.commissionExpected,
       b.status
@@ -405,7 +405,7 @@ export default function BanksPage() {
                       </td>
                       <td className="font-semibold text-[#4B5563]">{bank.branch}</td>
                       <td className="text-sm font-mono text-[#4B5563]">{bank.ifsc}</td>
-                      <td className="text-right font-medium">{bank.stats?.totalCases || 0}</td>
+                      <td className="text-right font-medium">{bank.stats?.totalLeads || 0}</td>
                       <td className="text-right font-semibold">{formatCurrency(bank.stats?.loanAmount || 0)}</td>
                       <td className="text-right font-bold text-[#22C55E]">{formatCurrency(bank.stats?.commissionExpected || 0)}</td>
                       <td className="text-right font-bold text-red-500">{formatCurrency(bank.stats?.commissionPending || 0)}</td>

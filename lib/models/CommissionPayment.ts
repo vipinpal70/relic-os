@@ -19,7 +19,7 @@ export interface ICommissionPayment extends Document {
 const CommissionPaymentSchema = new Schema<ICommissionPayment>(
   {
     commissionId: { type: Schema.Types.ObjectId, ref: "Commission", required: true },
-    caseId: { type: Schema.Types.ObjectId, ref: "Case", required: true },
+    caseId: { type: Schema.Types.ObjectId, ref: "Lead", required: true },
     amount: { type: Number, required: true, min: 0 },
     paymentDate: { type: String, required: true },
     paymentMode: {

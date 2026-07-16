@@ -11,6 +11,14 @@ const ACCESS_TOKEN_EXPIRY = "15m"; // 15 minutes
 const REFRESH_TOKEN_EXPIRY = "7d"; // 7 days
 export const SESSION_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
 
+/**
+ * Team management permission: Admins, or any user tagged "admin" (case-insensitive).
+ */
+export function canManageTeam(user: { role?: string; tag?: string } | null | undefined): boolean {
+  if (!user) return false;
+  return user.role === "Admin" || (user.tag || "").trim().toLowerCase() === "admin";
+}
+
 export interface TokenPayload {
   userId: string;
   sessionId: string;

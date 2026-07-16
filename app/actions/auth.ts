@@ -140,50 +140,12 @@ export async function register(prevState: any, formData: FormData) {
     });
     await newUser.save();
 
-    // Get client info
-    const headersList = await import("next/headers");
-    const userAgent = (await headersList.headers()).get("user-agent") || "unknown";
-    const ipAddress = (await headersList.headers()).get("x-forwarded-for") || "unknown";
-
-    // Create session in DB
-    const expiresAt = new Date(Date.now() + SESSION_EXPIRY_MS);
-    const session = new Session({
-      userId: newUser._id,
-      refreshToken: "temp",
-      userAgent,
-      ipAddress,
-      expiresAt,
-    });
-    await session.save();
-
-    // Generate tokens
-    const tokenPayload: TokenPayload = {
-      userId: newUser._id.toString(),
-      sessionId: session._id.toString(),
-      email: newUser.email,
-      role: newUser.role,
-      name: newUser.name,
-    };
-
-    const accessToken = generateAccessToken(tokenPayload);
-    const refreshToken = generateRefreshToken({
-      userId: newUser._id.toString(),
-      sessionId: session._id.toString(),
-    });
-
-    // Save refresh token back to session
-    session.refreshToken = refreshToken;
-    await session.save();
-
-    // Set cookies
-    await setAuthCookies(accessToken, refreshToken);
-
   } catch (error: any) {
     console.error("Registration action error:", error);
     return { error: error.message || "An unexpected error occurred during registration." };
   }
 
-  redirect("/dashboard");
+  redirect("/login");
 }
 
 export async function logout() {

@@ -40,7 +40,8 @@ export default function DashboardPage() {
         const res = await fetch("/api/leads");
         if (res.ok) {
           const data = await res.json();
-          setLeadsList(data);
+          const list = Array.isArray(data) ? data : (data && Array.isArray(data.data) ? data.data : []);
+          setLeadsList(list);
         }
       } catch (error) {
         console.error("Failed to load dashboard leads:", error);
@@ -66,7 +67,7 @@ export default function DashboardPage() {
     { title: "Monthly Volume", value: formatCurrency(dashboardData?.stats?.monthlyLoanVolume ?? 0), icon: BarChart2, gradientClass: "gradient-purple", change: 9.3 },
   ];
 
-  const recentLeads = leadsList.slice(0, 5);
+  const recentLeads = Array.isArray(leadsList) ? leadsList.slice(0, 5) : [];
 
   return (
     <AppLayout title="Dashboard">

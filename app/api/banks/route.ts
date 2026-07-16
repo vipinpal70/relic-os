@@ -5,7 +5,7 @@ import { BankValidationSchema } from "@/lib/validations/bank.validation";
 import { BankService } from "@/lib/services/bank.service";
 import { BankRepository } from "@/lib/repositories/bank.repository";
 import Bank from "@/lib/models/Bank";
-import Case from "@/lib/models/Case";
+import Lead from "@/lib/models/Lead";
 
 const bankService = new BankService();
 const bankRepo = new BankRepository();
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    const monthCasesStats = await Case.aggregate([
+    const monthLeadsStats = await Lead.aggregate([
       {
         $match: {
           isDeleted: false,
@@ -57,13 +57,13 @@ export async function GET(request: Request) {
       {
         $group: {
           _id: null,
-          casesCount: { $sum: 1 },
+          leadsCount: { $sum: 1 },
           loanAmount: { $sum: "$loanAmount" },
         },
       },
     ]);
 
-    const allTimeCommissions = await Case.aggregate([
+    const allTimeCommissions = await Lead.aggregate([
       {
         $match: {
           isDeleted: false,
@@ -81,12 +81,12 @@ export async function GET(request: Request) {
     // Enrich data
     const enrichedData = await Promise.all(
       result.data.map(async (bank) => {
-        const bankStats = await Case.aggregate([
+        const bankStats = await Lead.aggregate([
           { $match: { bankId: bank._id, isDeleted: false } },
           {
             $group: {
               _id: null,
-              totalCases: { $sum: 1 },
+              totalLeads: { $sum: 1 },
               loanAmount: { $sum: "$loanAmount" },
               commissionExpected: { $sum: "$bankExpectedCommission" },
               commissionPaid: { $sum: "$bankPaidCommission" },
@@ -96,7 +96,7 @@ export async function GET(request: Request) {
         ]);
 
         const stats = bankStats[0] || {
-          totalCases: 0,
+          totalLeads: 0,
           loanAmount: 0,
           commissionExpected: 0,
           commissionPaid: 0,
@@ -113,8 +113,8 @@ export async function GET(request: Request) {
     const stats = {
       total: totalBanks,
       active: activeBanks,
-      monthCases: monthCasesStats[0]?.casesCount || 0,
-      monthLoanAmount: monthCasesStats[0]?.loanAmount || 0,
+      monthLeads: monthLeadsStats[0]?.leadsCount || 0,
+      monthLoanAmount: monthLeadsStats[0]?.loanAmount || 0,
       paidCommission: allTimeCommissions[0]?.paidCommission || 0,
       pendingCommission: allTimeCommissions[0]?.pendingCommission || 0,
     };

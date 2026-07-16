@@ -33,18 +33,19 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
-  // Form edit states
+  // Form edit states — keys mirror the API schema (LeadValidationSchema)
   const [editForm, setEditForm] = useState({
-    applicant_name: "",
+    applicantName: "",
     email: "",
     phone: "",
-    loan_amount: 0,
-    loan_type: "Home Loan",
-    bank: "",
-    channel_partner: "",
-    assigned_user: "",
+    loanAmount: 0,
+    loanType: "Home Loan",
+    bankId: "",
+    channelPartnerId: "",
+    assignedUserId: "",
     remarks: "",
   });
+  const [editError, setEditError] = useState("");
 
   const [statusForm, setStatusForm] = useState({
     status: "New",
@@ -60,11 +61,10 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
   const [dragActive, setDragActive] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
-  // Auto-suggestion lists for bank/partner matching commissions configuration
-  const [existingBanks, setExistingBanks] = useState<string[]>([]);
-  const [existingPartners, setExistingPartners] = useState<string[]>([]);
-  const [isOtherBank, setIsOtherBank] = useState(false);
-  const [isOtherPartner, setIsOtherPartner] = useState(false);
+  // Dropdown option lists for the edit form (ids + display labels)
+  const [existingBanks, setExistingBanks] = useState<{ _id: string; label: string }[]>([]);
+  const [existingPartners, setExistingPartners] = useState<{ _id: string; label: string }[]>([]);
+  const [teamMembers, setTeamMembers] = useState<{ _id: string; label: string }[]>([]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -108,14 +108,14 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
       const data = await res.json();
       setLead(data);
       setEditForm({
-        applicant_name: data.applicant_name,
+        applicantName: data.applicant_name,
         email: data.email,
         phone: data.phone,
-        loan_amount: data.loan_amount,
-        loan_type: data.loan_type,
-        bank: data.bank || "",
-        channel_partner: data.channel_partner || "",
-        assigned_user: data.assigned_user || "",
+        loanAmount: data.loan_amount,
+        loanType: data.loan_type,
+        bankId: data.bank_id || "",
+        channelPartnerId: data.channel_partner_id || "",
+        assignedUserId: data.assigned_user_id || "",
         remarks: data.remarks || "",
       });
       setStatusForm({
@@ -174,8 +174,8 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
       if (banksRes.ok) {
         const banksData = await banksRes.json();
         if (banksData && banksData.data) {
-          const list = banksData.data.map((b: any) => b.bankName).filter(Boolean);
-          setExistingBanks(Array.from(new Set(list)).sort() as string[]);
+          const list = banksData.data.map((b: any) => ({ _id: b._id, label: `${b.bankName} — ${b.branch}` }));
+          setExistingBanks(list);
         }
       }
 
@@ -183,8 +183,16 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
       if (cpRes.ok) {
         const cpData = await cpRes.json();
         if (cpData && cpData.data) {
-          const list = cpData.data.map((p: any) => p.companyName || p.name).filter(Boolean);
-          setExistingPartners(Array.from(new Set(list)).sort() as string[]);
+          const list = cpData.data.map((p: any) => ({ _id: p._id, label: p.companyName || p.name }));
+          setExistingPartners(list);
+        }
+      }
+
+      const teamRes = await fetch("/api/team");
+      if (teamRes.ok) {
+        const users = await teamRes.json();
+        if (Array.isArray(users)) {
+          setTeamMembers(users.map((u: any) => ({ _id: u._id, label: `${u.name} (${u.role})` })));
         }
       }
     } catch (err) {
@@ -209,22 +217,24 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
   // Actions
   const openEditModal = () => {
     setEditForm({
-      applicant_name: lead.applicant_name,
+      applicantName: lead.applicant_name,
       email: lead.email,
       phone: lead.phone,
-      loan_amount: lead.loan_amount,
-      loan_type: lead.loan_type,
-      bank: lead.bank || "",
-      channel_partner: lead.channel_partner || "",
-      assigned_user: lead.assigned_user || "",
+      loanAmount: lead.loan_amount,
+      loanType: lead.loan_type,
+      bankId: lead.bank_id || "",
+      channelPartnerId: lead.channel_partner_id || "",
+      assignedUserId: lead.assigned_user_id || "",
       remarks: lead.remarks || "",
     });
+    setEditError("");
     setIsEditOpen(true);
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setEditError("");
     try {
       const res = await fetch(`/api/leads/${id}`, {
         method: "PATCH",
@@ -235,11 +245,22 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
         setIsEditOpen(false);
         await fetchLead();
         await fetchActivities();
+        await fetchCommission(); // amount/bank/partner changes trigger recalculation
       } else {
-        alert("Failed to update lead details.");
+        const data = await res.json().catch(() => ({} as any));
+        if (data.details) {
+          const messages = Object.entries(data.details)
+            .filter(([key]) => key !== "_errors")
+            .map(([, value]: [string, any]) => value?._errors?.[0])
+            .filter(Boolean);
+          setEditError(messages.join(" • ") || data.error || "Failed to update lead details.");
+        } else {
+          setEditError(data.error || "Failed to update lead details.");
+        }
       }
     } catch (err) {
       console.error(err);
+      setEditError("An unexpected error occurred. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -689,13 +710,18 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
               </div>
 
               <form onSubmit={handleEditSubmit} className="p-5 space-y-4 text-xs font-semibold">
+                {editError && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl">
+                    {editError}
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-[#374151]">Applicant Full Name</label>
                     <input
                       type="text"
-                      value={editForm.applicant_name}
-                      onChange={(e) => setEditForm({ ...editForm, applicant_name: e.target.value })}
+                      value={editForm.applicantName}
+                      onChange={(e) => setEditForm({ ...editForm, applicantName: e.target.value })}
                       className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:outline-none focus:border-blue-500 font-medium text-sm text-[#111827]"
                       required
                     />
@@ -726,8 +752,8 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                   <div className="space-y-1.5">
                     <label className="text-[#374151]">Loan Type</label>
                     <select
-                      value={editForm.loan_type}
-                      onChange={(e) => setEditForm({ ...editForm, loan_type: e.target.value })}
+                      value={editForm.loanType}
+                      onChange={(e) => setEditForm({ ...editForm, loanType: e.target.value })}
                       className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:outline-none focus:border-blue-500 font-medium text-sm text-[#111827] bg-white cursor-pointer"
                     >
                       <option value="Home Loan">Home Loan</option>
@@ -743,8 +769,8 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                     <label className="text-[#374151]">Requested Loan Amount (INR)</label>
                     <input
                       type="number"
-                      value={editForm.loan_amount}
-                      onChange={(e) => setEditForm({ ...editForm, loan_amount: parseFloat(e.target.value) || 0 })}
+                      value={editForm.loanAmount}
+                      onChange={(e) => setEditForm({ ...editForm, loanAmount: parseFloat(e.target.value) || 0 })}
                       className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:outline-none focus:border-blue-500 font-medium text-sm text-[#111827]"
                       required
                     />
@@ -754,15 +780,15 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                   <div className="space-y-1.5">
                     <label className="text-[#374151]">Bank Name</label>
                     <select
-                      value={editForm.bank}
-                      onChange={(e) => setEditForm({ ...editForm, bank: e.target.value })}
+                      value={editForm.bankId}
+                      onChange={(e) => setEditForm({ ...editForm, bankId: e.target.value })}
                       className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:outline-none focus:border-blue-500 font-semibold text-sm text-[#111827] bg-white cursor-pointer"
                       required
                     >
                       <option value="" disabled>-- Select Bank --</option>
-                      {existingBanks.map((name) => (
-                        <option key={name} value={name}>
-                          {name}
+                      {existingBanks.map((b) => (
+                        <option key={b._id} value={b._id}>
+                          {b.label}
                         </option>
                       ))}
                     </select>
@@ -772,14 +798,14 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                   <div className="space-y-1.5">
                     <label className="text-[#374151]">Channel Partner</label>
                     <select
-                      value={editForm.channel_partner}
-                      onChange={(e) => setEditForm({ ...editForm, channel_partner: e.target.value })}
+                      value={editForm.channelPartnerId}
+                      onChange={(e) => setEditForm({ ...editForm, channelPartnerId: e.target.value })}
                       className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:outline-none focus:border-blue-500 font-semibold text-sm text-[#111827] bg-white cursor-pointer"
                     >
                       <option value="">-- Direct (No Partner) --</option>
-                      {existingPartners.map((name) => (
-                        <option key={name} value={name}>
-                          {name}
+                      {existingPartners.map((p) => (
+                        <option key={p._id} value={p._id}>
+                          {p.label}
                         </option>
                       ))}
                     </select>
@@ -787,13 +813,18 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
 
                   <div className="space-y-1.5">
                     <label className="text-[#374151]">Assigned RM</label>
-                    <input
-                      type="text"
-                      value={editForm.assigned_user}
-                      onChange={(e) => setEditForm({ ...editForm, assigned_user: e.target.value })}
-                      placeholder="e.g. Amit Singh"
-                      className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:outline-none focus:border-blue-500 font-medium text-sm text-[#111827]"
-                    />
+                    <select
+                      value={editForm.assignedUserId}
+                      onChange={(e) => setEditForm({ ...editForm, assignedUserId: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:outline-none focus:border-blue-500 font-semibold text-sm text-[#111827] bg-white cursor-pointer"
+                    >
+                      <option value="">-- Unassigned --</option>
+                      {teamMembers.map((u) => (
+                        <option key={u._id} value={u._id}>
+                          {u.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 

@@ -23,11 +23,11 @@ export interface ChannelPartner {
 
 export interface ChannelPartnerStats {
   allTime: {
-    totalCases: number;
-    approvedCases: number;
-    rejectedCases: number;
-    pendingCases: number;
-    disbursedCases: number;
+    totalLeads: number;
+    approvedLeads: number;
+    rejectedLeads: number;
+    pendingLeads: number;
+    disbursedLeads: number;
     totalLoanAmount: number;
     disbursedAmount: number;
     commissionExpected: number;
@@ -35,7 +35,7 @@ export interface ChannelPartnerStats {
     commissionPending: number;
   };
   currentMonth: {
-    cases: number;
+    leads: number;
     amount: number;
     commissionExpected: number;
     commissionPaid: number;
@@ -166,13 +166,13 @@ export function useChannelPartnerAnalytics(id: string, dateFilters: { startDate?
   });
 }
 
-export function useChannelPartnerCases(id: string, params: any = {}) {
+export function useChannelPartnerLeads(id: string, params: any = {}) {
   return useQuery({
-    queryKey: ["partnerCases", id, params],
+    queryKey: ["partnerLeads", id, params],
     queryFn: async () => {
       const queryStr = new URLSearchParams(params).toString();
-      const res = await fetch(`/api/channel-partners/${id}/cases?${queryStr}`);
-      if (!res.ok) throw new Error("Failed to fetch partner cases");
+      const res = await fetch(`/api/channel-partners/${id}/leads?${queryStr}`);
+      if (!res.ok) throw new Error("Failed to fetch partner leads");
       return res.json();
     },
     enabled: !!id,

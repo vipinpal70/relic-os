@@ -221,7 +221,7 @@ export default function ChannelPartnersPage() {
       p.phone,
       p.gst || "",
       p.pan || "",
-      p.stats.totalCases,
+      p.stats.totalLeads,
       p.stats.loanAmount,
       p.stats.commissionEarned,
       p.status
@@ -419,7 +419,7 @@ export default function ChannelPartnersPage() {
                       </td>
                       <td className="font-semibold text-[#4B5563]">{partner.companyName}</td>
                       <td className="text-sm font-mono text-[#4B5563]">{partner.phone}</td>
-                      <td className="text-right font-medium">{partner.stats?.totalCases || 0}</td>
+                      <td className="text-right font-medium">{partner.stats?.totalLeads || 0}</td>
                       <td className="text-right font-semibold">{formatCurrency(partner.stats?.loanAmount || 0)}</td>
                       <td className="text-right font-bold text-[#22C55E]">{formatCurrency(partner.stats?.commissionEarned || 0)}</td>
                       <td className="text-right font-bold text-red-500">{formatCurrency(partner.stats?.commissionPending || 0)}</td>
@@ -704,12 +704,12 @@ export default function ChannelPartnersPage() {
 
                           <div className="grid grid-cols-3 gap-3">
                             <div>
-                              <label className="block text-[10px] font-bold text-[#6B7280] mb-0.5">Loan Type *</label>
+                              <label className="block text-xs font-bold text-[#6B7280] mb-1">Loan Type *</label>
                               <select
                                 required
                                 value={row.loanType}
                                 onChange={(e) => handleCommissionRowChange(idx, "loanType", e.target.value)}
-                                className={`w-full px-2 py-1.5 border rounded-lg text-xs bg-white focus:outline-none ${
+                                className={`w-full px-3 py-2.5 border rounded-lg text-xs bg-white focus:outline-none ${
                                   formErrors[`row_${idx}_loanType`] ? "border-red-500" : "border-[#E5E7EB]"
                                 }`}
                               >
@@ -726,11 +726,11 @@ export default function ChannelPartnersPage() {
                             </div>
 
                             <div>
-                              <label className="block text-[10px] font-bold text-[#6B7280] mb-0.5">Commission Type</label>
+                              <label className="block text-xs font-bold text-[#6B7280] mb-1">Commission Type</label>
                               <select
                                 value={row.commissionType}
                                 onChange={(e) => handleCommissionRowChange(idx, "commissionType", e.target.value)}
-                                className="w-full px-2 py-1.5 border border-[#E5E7EB] rounded-lg text-xs bg-white focus:outline-none"
+                                className="w-full px-3 py-2.5 border border-[#E5E7EB] rounded-lg text-xs bg-white focus:outline-none"
                               >
                                 <option value="Percentage">Percentage (%)</option>
                                 <option value="Fixed">Fixed Amount (₹)</option>
@@ -738,14 +738,14 @@ export default function ChannelPartnersPage() {
                             </div>
 
                             <div>
-                              <label className="block text-[10px] font-bold text-[#6B7280] mb-0.5">Commission Value *</label>
+                              <label className="block text-xs font-bold text-[#6B7280] mb-1">Commission Value *</label>
                               <input
                                 type="number"
                                 required
                                 step="any"
                                 value={row.commissionValue}
                                 onChange={(e) => handleCommissionRowChange(idx, "commissionValue", parseFloat(e.target.value))}
-                                className={`w-full px-2 py-1 border rounded-lg text-xs focus:outline-none ${
+                                className={`w-full px-3 py-2 border rounded-lg text-xs focus:outline-none ${
                                   formErrors[`row_${idx}_val`] ? "border-red-500" : "border-[#E5E7EB]"
                                 }`}
                               />
@@ -756,44 +756,44 @@ export default function ChannelPartnersPage() {
                             <div className="col-span-2">
                               <div className="grid grid-cols-2 gap-2">
                                 <div>
-                                  <label className="block text-[10px] font-bold text-[#6B7280] mb-0.5">Effective From *</label>
+                                  <label className="block text-xs font-bold text-[#6B7280] mb-1">Effective From *</label>
                                   <input
                                     type="date"
                                     required
                                     value={row.effectiveFrom}
                                     onChange={(e) => handleCommissionRowChange(idx, "effectiveFrom", e.target.value)}
-                                    className="w-full px-2 py-0.5 border border-[#E5E7EB] rounded-lg text-xs font-mono focus:outline-none"
+                                    className="w-full px-2 py-0.5 border border-[#E5E7EB] rounded-lg text-sm font-mono focus:outline-none"
                                   />
                                 </div>
                                 <div>
-                                  <label className="block text-[10px] font-bold text-[#6B7280] mb-0.5">Effective To</label>
+                                  <label className="block text-xs font-bold text-[#6B7280] mb-1">Effective To</label>
                                   <input
                                     type="date"
                                     value={row.effectiveTo}
                                     onChange={(e) => handleCommissionRowChange(idx, "effectiveTo", e.target.value)}
-                                    className="w-full px-2 py-0.5 border border-[#E5E7EB] rounded-lg text-xs font-mono focus:outline-none"
+                                    className="w-full px-2 py-0.5 border border-[#E5E7EB] rounded-lg text-sm font-mono focus:outline-none"
                                   />
                                 </div>
                               </div>
                             </div>
 
                             <div>
-                              <label className="block text-[10px] font-bold text-[#6B7280] mb-0.5">Min Amount</label>
+                              <label className="block text-xs font-bold text-[#6B7280] mb-1">Min Amount</label>
                               <input
                                 type="number"
                                 value={row.minAmount}
                                 onChange={(e) => handleCommissionRowChange(idx, "minAmount", parseFloat(e.target.value))}
-                                className="w-full px-2 py-1 border border-[#E5E7EB] rounded-lg text-xs focus:outline-none"
+                                className="w-full px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none"
                               />
                             </div>
 
                             <div>
-                              <label className="block text-[10px] font-bold text-[#6B7280] mb-0.5">Max Amount</label>
+                              <label className="block text-sm font-bold text-[#6B7280] mb-1">Max Amount</label>
                               <input
                                 type="number"
                                 value={row.maxAmount}
                                 onChange={(e) => handleCommissionRowChange(idx, "maxAmount", parseFloat(e.target.value))}
-                                className="w-full px-2 py-1 border border-[#E5E7EB] rounded-lg text-xs focus:outline-none"
+                                className="w-full px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none"
                               />
                             </div>
                           </div>

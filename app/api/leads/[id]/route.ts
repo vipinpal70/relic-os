@@ -1,319 +1,144 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
-import Case from "@/lib/models/Case";
-import Bank from "@/lib/models/Bank";
-import ChannelPartner from "@/lib/models/ChannelPartner";
-import User from "@/lib/models/User";
+import { formatLead } from "@/lib/utils";
+import { verifyPermission } from "@/lib/middlewares/auth.middleware";
+import { LeadValidationSchema } from "@/lib/validations/lead.validation";
+import { LeadRepository } from "@/lib/repositories/lead.repository";
+import { CommissionService } from "@/lib/services/commission.service";
 import ActivityLog from "@/lib/models/ActivityLog";
-import { getSessionUser } from "@/lib/auth";
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+const leadRepo = new LeadRepository();
+const commissionService = new CommissionService();
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
   try {
     await dbConnect();
+    const authResult = await verifyPermission();
+    if (authResult instanceof NextResponse) return authResult;
 
-    // Ensure models are registered
-    await Bank.findOne();
-    await ChannelPartner.findOne();
-    await User.findOne();
-
-    let c = null;
-
-    // 1. Try by Mongoose ID
-    if (id.match(/^[0-9a-fA-F]{24}$/)) {
-      c = await Case.findOne({ _id: id, isDeleted: false })
-        .populate("bankId", "bankName")
-        .populate("channelPartnerId", "name companyName")
-        .populate("assignedUserId", "name");
+    const lead = await leadRepo.findById(id);
+    if (!lead) {
+      return NextResponse.json({ error: "Lead not found" }, { status: 404 });
     }
 
-    // 2. Try by application number
-    if (!c) {
-      c = await Case.findOne({ applicationNumber: id, isDeleted: false })
-        .populate("bankId", "bankName")
-        .populate("channelPartnerId", "name companyName")
-        .populate("assignedUserId", "name");
-    }
-
-    if (!c) {
-      return NextResponse.json({ error: "Case not found" }, { status: 404 });
-    }
-
-    const obj = c.toObject();
-    const formatted = {
-      id: obj._id.toString(),
-      google_form_id: "",
-      applicant_name: obj.applicantName,
-      email: obj.email,
-      phone: obj.phone,
-      loan_amount: obj.loanAmount,
-      loan_type: obj.loanType,
-      bank: obj.bankId?.bankName || "",
-      channel_partner: obj.channelPartnerId?.companyName || obj.channelPartnerId?.name || "",
-      assigned_user: obj.assignedUserId?.name || "",
-      lead_source: "Manual",
-      application_number: obj.applicationNumber,
-      status: obj.status === "Pending" ? "Processing" : obj.status,
-      disbursed_amount: obj.disbursedAmount || 0,
-      approved_date: obj.approvedDate || "",
-      disbursed_date: obj.disbursedDate || "",
-      remarks: obj.remarks || "",
-      created_at: obj.createdAt,
-    };
-
-    return NextResponse.json(formatted);
+    return NextResponse.json(formatLead(lead));
   } catch (error: any) {
     console.error(`Error loading lead details for ${id}:`, error);
-    return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to load lead details" }, { status: 500 });
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
   try {
     await dbConnect();
+    const authResult = await verifyPermission(["Super Admin", "Admin", "Manager", "Employee", "Team"]);
+    if (authResult instanceof NextResponse) return authResult;
+    const { user } = authResult;
+
+    const originalLead = await leadRepo.findById(id);
+    if (!originalLead) {
+      return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+    }
+
     const body = await request.json();
+    const validationResult = LeadValidationSchema.partial().safeParse(body);
 
-    let c = null;
-    if (id.match(/^[0-9a-fA-F]{24}$/)) {
-      c = await Case.findOne({ _id: id, isDeleted: false });
-    }
-    if (!c) {
-      c = await Case.findOne({ applicationNumber: id, isDeleted: false });
-    }
-
-    if (!c) {
-      return NextResponse.json({ error: "Case not found" }, { status: 404 });
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: validationResult.error.format() },
+        { status: 400 }
+      );
     }
 
-    const session = await getSessionUser();
-    const userName = session?.user?.name || "System";
+    const data = validationResult.data;
 
-    // Track old values for activity log
-    const oldName = c.applicantName;
-    const oldEmail = c.email;
-    const oldPhone = c.phone;
-    const oldLoanAmount = c.loanAmount;
-    const oldLoanType = c.loanType;
-    const oldStatus = c.status;
-    const oldRemarks = c.remarks;
-    const oldDisbursedAmount = c.disbursedAmount;
+    // Track fields that change and trigger recalculation if they do
+    const needsRecalc =
+      (data.loanAmount !== undefined && data.loanAmount !== originalLead.loanAmount) ||
+      (data.loanType !== undefined && data.loanType !== originalLead.loanType) ||
+      (data.bankId !== undefined && data.bankId !== originalLead.bankId?.toString()) ||
+      (data.channelPartnerId !== undefined && data.channelPartnerId !== originalLead.channelPartnerId?.toString());
 
-    let hasChanges = false;
+    // Update fields
+    const updates: any = {
+      ...data,
+      updatedBy: user.name,
+    };
 
-    // Map fields
-    if (body.applicant_name !== undefined && body.applicant_name !== c.applicantName) {
-      c.applicantName = body.applicant_name;
-      hasChanges = true;
-    }
-    if (body.email !== undefined && body.email !== c.email) {
-      c.email = body.email;
-      hasChanges = true;
-    }
-    if (body.phone !== undefined && body.phone !== c.phone) {
-      c.phone = body.phone;
-      hasChanges = true;
-    }
-    if (body.loan_amount !== undefined && body.loan_amount !== c.loanAmount) {
-      c.loanAmount = body.loan_amount;
-      hasChanges = true;
-    }
-    if (body.loan_type !== undefined && body.loan_type !== c.loanType) {
-      c.loanType = body.loan_type;
-      hasChanges = true;
-    }
-    if (body.remarks !== undefined && body.remarks !== c.remarks) {
-      c.remarks = body.remarks;
-      hasChanges = true;
-    }
-    if (body.disbursed_amount !== undefined && body.disbursed_amount !== c.disbursedAmount) {
-      c.disbursedAmount = body.disbursed_amount;
-      hasChanges = true;
-    }
-    if (body.approved_date !== undefined && body.approved_date !== c.approvedDate) {
-      c.approvedDate = body.approved_date;
-      hasChanges = true;
-    }
-    if (body.disbursed_date !== undefined && body.disbursed_date !== c.disbursedDate) {
-      c.disbursedDate = body.disbursed_date;
-      hasChanges = true;
-    }
-
-    if (body.status !== undefined) {
-      let statusToSet = body.status;
-      if (statusToSet !== c.status) {
-        c.status = statusToSet;
-        hasChanges = true;
-
-        if (statusToSet === "Disbursed") {
-          if (!c.disbursedDate) {
-            c.disbursedDate = new Date().toISOString().split("T")[0];
-          }
-          if (c.disbursedAmount === 0) {
-            c.disbursedAmount = c.loanAmount;
-          }
-        } else if (statusToSet === "Approved" && !c.approvedDate) {
-          c.approvedDate = new Date().toISOString().split("T")[0];
+    if (data.status && data.status !== originalLead.status) {
+      if (data.status === "Disbursed") {
+        updates.disbursedDate = new Date().toISOString().split("T")[0];
+        if (updates.disbursedAmount === undefined || updates.disbursedAmount === 0) {
+          updates.disbursedAmount = data.loanAmount ?? originalLead.loanAmount;
         }
+      } else if (data.status === "Approved") {
+        updates.approvedDate = new Date().toISOString().split("T")[0];
       }
     }
 
-    // Dynamic relational resolutions
-    if (body.bank !== undefined) {
-      const bankNameClean = body.bank.trim();
-      if (bankNameClean) {
-        let bankDoc = await Bank.findOne({
-          bankName: new RegExp("^" + bankNameClean.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&") + "$", "i"),
-        });
-        if (!bankDoc) {
-          bankDoc = await Bank.create({
-            bankName: bankNameClean,
-            branch: "Main Branch",
-            ifsc: "UTIB0000000",
-            status: "Active",
-          });
-        }
-        if (bankDoc._id.toString() !== c.bankId?.toString()) {
-          c.bankId = bankDoc._id;
-          hasChanges = true;
-
-          await ActivityLog.create({
-            entityType: "Case",
-            entityId: c._id,
-            action: "Bank Updated",
-            details: `Associated with bank: "${bankNameClean}".`,
-            performedBy: userName,
-          });
-        }
-      }
+    const updatedLead = await leadRepo.update(id, updates);
+    if (!updatedLead) {
+      return NextResponse.json({ error: "Failed to update lead" }, { status: 500 });
     }
 
-    if (body.channel_partner !== undefined) {
-      const partnerClean = body.channel_partner.trim();
-      if (partnerClean) {
-        let cpDoc = await ChannelPartner.findOne({
-          $or: [
-            { name: new RegExp("^" + partnerClean.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&") + "$", "i") },
-            { companyName: new RegExp("^" + partnerClean.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&") + "$", "i") },
-          ],
-        });
-        if (!cpDoc) {
-          cpDoc = await ChannelPartner.create({
-            name: partnerClean,
-            companyName: partnerClean,
-            email: `info@${partnerClean.toLowerCase().replace(/[^a-z0-9]/g, "") || "partner"}.com`,
-            phone: "1800-000-0000",
-            pan: "DEFAULTPAN",
-            gst: "DEFAULTGST",
-            status: "Active",
-          });
-        }
-        if (cpDoc._id.toString() !== c.channelPartnerId?.toString()) {
-          c.channelPartnerId = cpDoc._id;
-          hasChanges = true;
-
-          await ActivityLog.create({
-            entityType: "Case",
-            entityId: c._id,
-            action: "Channel Partner Updated",
-            details: `Associated with channel partner: "${partnerClean}".`,
-            performedBy: userName,
-          });
-        }
-      }
+    // Trigger recalculation of commission if required
+    if (needsRecalc) {
+      await commissionService.calculateLeadCommissions(id, user.name);
     }
 
-    if (body.assigned_user !== undefined) {
-      const userClean = body.assigned_user.trim();
-      if (userClean) {
-        const userDoc = await User.findOne({
-          name: new RegExp("^" + userClean.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&") + "$", "i"),
-        });
-        if (userDoc && userDoc._id.toString() !== c.assignedUserId?.toString()) {
-          c.assignedUserId = userDoc._id;
-          hasChanges = true;
+    // Populate and fetch
+    const finalLead = await leadRepo.findById(id);
 
-          await ActivityLog.create({
-            entityType: "Case",
-            entityId: c._id,
-            action: "RM Assigned",
-            details: `Case assigned to RM: "${userClean}".`,
-            performedBy: userName,
-          });
-        }
-      }
-    }
+    await ActivityLog.create({
+      entityType: "Lead",
+      entityId: finalLead!._id,
+      action: "Updated",
+      details: `Lead updated. Status: ${finalLead!.status}. Recalculation: ${needsRecalc ? "Yes" : "No"}.`,
+      performedBy: user.name,
+    });
 
-    if (!hasChanges) {
-      return NextResponse.json({ success: true, message: "No fields modified.", lead: c });
-    }
-
-    await c.save();
-
-    // Log timeline logs in ActivityLog
-    if (body.status && body.status !== oldStatus) {
-      await ActivityLog.create({
-        entityType: "Case",
-        entityId: c._id,
-        action: "Status Updated",
-        details: `Status transitioned from ${oldStatus} to ${body.status}.`,
-        performedBy: userName,
-      });
-    }
-
-    if (body.loan_amount !== undefined && body.loan_amount !== oldLoanAmount) {
-      await ActivityLog.create({
-        entityType: "Case",
-        entityId: c._id,
-        action: "Loan Amount Updated",
-        details: `Requested amount updated from ₹${oldLoanAmount.toLocaleString("en-IN")} to ₹${body.loan_amount.toLocaleString("en-IN")}.`,
-        performedBy: userName,
-      });
-    }
-
-    if (body.loan_type !== undefined && body.loan_type !== oldLoanType) {
-      await ActivityLog.create({
-        entityType: "Case",
-        entityId: c._id,
-        action: "Loan Type Updated",
-        details: `Loan type changed from "${oldLoanType}" to "${body.loan_type}".`,
-        performedBy: userName,
-      });
-    }
-
-    if (body.remarks !== undefined && body.remarks !== oldRemarks) {
-      await ActivityLog.create({
-        entityType: "Case",
-        entityId: c._id,
-        action: "Remarks Added",
-        details: body.remarks,
-        performedBy: userName,
-      });
-    }
-
-    const contactChanges = [];
-    if (body.applicant_name !== undefined && body.applicant_name !== oldName) {
-      contactChanges.push(`Name: "${oldName}" -> "${body.applicant_name}"`);
-    }
-    if (body.email !== undefined && body.email !== oldEmail) {
-      contactChanges.push(`Email: "${oldEmail}" -> "${body.email}"`);
-    }
-    if (body.phone !== undefined && body.phone !== oldPhone) {
-      contactChanges.push(`Phone: "${oldPhone}" -> "${body.phone}"`);
-    }
-    if (contactChanges.length > 0) {
-      await ActivityLog.create({
-        entityType: "Case",
-        entityId: c._id,
-        action: "Lead Details Updated",
-        details: `Contact profile modified: ${contactChanges.join(" · ")}`,
-        performedBy: userName,
-      });
-    }
-
-    return NextResponse.json({ success: true, lead: c });
+    return NextResponse.json(formatLead(finalLead));
   } catch (error: any) {
-    console.error("Error updating lead details:", error);
-    return NextResponse.json({ error: "Database connection failed" }, { status: 500 });
+    console.error(`Error updating lead ${id}:`, error);
+    return NextResponse.json({ error: "Failed to update lead" }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  try {
+    await dbConnect();
+    const authResult = await verifyPermission(["Super Admin", "Admin"]);
+    if (authResult instanceof NextResponse) return authResult;
+    const { user } = authResult;
+
+    const deleted = await leadRepo.softDelete(id, user.name);
+    if (!deleted) {
+      return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+    }
+
+    await ActivityLog.create({
+      entityType: "Lead",
+      entityId: deleted._id,
+      action: "Deleted",
+      details: `Lead with app number ${deleted.applicationNumber} was soft-deleted.`,
+      performedBy: user.name,
+    });
+
+    return NextResponse.json({ success: true, message: "Lead deleted successfully" });
+  } catch (error: any) {
+    console.error(`Error deleting lead ${id}:`, error);
+    return NextResponse.json({ error: "Failed to delete lead" }, { status: 500 });
   }
 }

@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
-import { Shield, User, Mail, Lock, UserCog, ArrowRight, Loader2, Sparkles, ShieldCheck } from "lucide-react";
+import { Shield, User, Mail, Lock, UserCog, ArrowRight, Loader2, Sparkles, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { register } from "@/app/actions/auth";
 
 export function RegisterForm() {
   const [state, formAction, isPending] = useActionState(register, null);
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col lg:flex-row font-sans">
@@ -33,26 +34,17 @@ export function RegisterForm() {
             <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
             Empowering Loan Origination & CRM
           </div>
-          <h1 className="text-4xl lg:text-5xl font-extrabold leading-tight tracking-tight">
+          <h1 className="text-4xl lg:text-5xl font-semibold leading-tight tracking-tight">
             Start managing your loan pipelines smarter.
           </h1>
           <p className="text-indigo-100 text-base leading-relaxed">
             Create an administrator or team account to access our complete dashboard suite, upload files securely, and handle lead distributions in minutes.
           </p>
-
-          <div className="flex items-center gap-2.5 pt-4">
-            <ShieldCheck className="w-6 h-6 text-emerald-400 flex-shrink-0" />
-            <span className="text-sm font-semibold text-indigo-50">Fully compliance-ready MongoDB Session Vault</span>
-          </div>
         </div>
 
         {/* Footer */}
         <div className="text-xs text-indigo-200/80 relative z-10 flex items-center justify-between">
           <span>&copy; {new Date().getFullYear()} Relic OS. All rights reserved.</span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-            Active Session Guard v2.0
-          </span>
         </div>
       </div>
 
@@ -70,7 +62,7 @@ export function RegisterForm() {
                 <p className="text-[10px] text-[#9CA3AF] tracking-wider uppercase font-semibold">Loan Management</p>
               </div>
             </div>
-            <h2 className="text-3xl font-extrabold text-[#111827] tracking-tight">Create Account</h2>
+            <h2 className="text-3xl font-bold text-[#111827] tracking-tight">Create Account</h2>
             <p className="text-sm text-[#6B7280]">
               Create an account to gain dashboard access and set up your loan workflows.
             </p>
@@ -95,7 +87,7 @@ export function RegisterForm() {
                   name="name"
                   type="text"
                   required
-                  placeholder="Vikash Sharma"
+                  placeholder="Your Full Name"
                   className="w-full pl-11 pr-4 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:border-[#3B82F6] focus:ring-2 focus:ring-blue-100 transition-all font-medium"
                 />
               </div>
@@ -128,11 +120,23 @@ export function RegisterForm() {
                   <input
                     id="password"
                     name="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     required
                     placeholder="••••••••"
-                    className="w-full pl-11 pr-4 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:border-[#3B82F6] focus:ring-2 focus:ring-blue-100 transition-all font-medium"
+                    className="w-full pl-11 pr-11 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:border-[#3B82F6] focus:ring-2 focus:ring-blue-100 transition-all font-medium"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors focus:outline-none"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4.5 h-4.5" />
+                    ) : (
+                      <Eye className="w-4.5 h-4.5" />
+                    )}
+                  </button>
                 </div>
               </div>
 

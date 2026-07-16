@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document as MongooseDocument } from "mongoose";
 
 export interface IDocument extends MongooseDocument {
-  entityType: "Bank" | "ChannelPartner" | "Case";
+  entityType: "Bank" | "ChannelPartner" | "Lead";
   entityId: mongoose.Types.ObjectId;
   name: string;
   fileUrl: string;
@@ -15,7 +15,7 @@ export interface IDocument extends MongooseDocument {
 
 const DocumentSchema = new Schema<IDocument>(
   {
-    entityType: { type: String, enum: ["Bank", "ChannelPartner", "Case"], required: true },
+    entityType: { type: String, enum: ["Bank", "ChannelPartner", "Lead"], required: true },
     entityId: { type: Schema.Types.ObjectId, required: true },
     name: { type: String, required: true },
     fileUrl: { type: String, required: true },

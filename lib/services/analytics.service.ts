@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import Case from "@/lib/models/Case";
+import Lead from "@/lib/models/Lead";
 
 export class AnalyticsService {
   /**
@@ -34,7 +34,7 @@ export class AnalyticsService {
   }
 
   /**
-   * 1. Monthly Trends (Loan Volume, Cases Count, Commission Earned)
+   * 1. Monthly Trends (Loan Volume, Leads Count, Commission Earned)
    */
   async getMonthlyTrends(params: {
     bankId?: string;
@@ -53,7 +53,7 @@ export class AnalyticsService {
             month: { $month: "$createdAt" },
           },
           loanVolume: { $sum: "$loanAmount" },
-          caseCount: { $sum: 1 },
+          leadCount: { $sum: 1 },
           bankCommission: { $sum: "$bankExpectedCommission" },
           partnerCommission: { $sum: "$partnerExpectedCommission" },
         },
@@ -78,7 +78,7 @@ export class AnalyticsService {
             ],
           },
           loanVolume: 1,
-          caseCount: 1,
+          leadCount: 1,
           bankCommission: 1,
           partnerCommission: 1,
         },
@@ -86,7 +86,7 @@ export class AnalyticsService {
       { $sort: { label: 1 } },
     ];
 
-    return await Case.aggregate(pipeline as any);
+    return await Lead.aggregate(pipeline as any);
   }
 
   /**
@@ -124,7 +124,7 @@ export class AnalyticsService {
       { $sort: { value: -1 } },
     ];
 
-    return await Case.aggregate(pipeline as any);
+    return await Lead.aggregate(pipeline as any);
   }
 
   /**
@@ -158,7 +158,7 @@ export class AnalyticsService {
       { $sort: { count: -1 } },
     ];
 
-    return await Case.aggregate(pipeline as any);
+    return await Lead.aggregate(pipeline as any);
   }
 
   /**
@@ -171,7 +171,7 @@ export class AnalyticsService {
         $group: {
           _id: "$channelPartnerId",
           totalVolume: { $sum: "$loanAmount" },
-          caseCount: { $sum: 1 },
+          leadCount: { $sum: 1 },
           commissionEarned: { $sum: "$partnerExpectedCommission" },
         },
       },
@@ -191,7 +191,7 @@ export class AnalyticsService {
           name: "$partner.name",
           companyName: "$partner.companyName",
           totalVolume: 1,
-          caseCount: 1,
+          leadCount: 1,
           commissionEarned: 1,
         },
       },
@@ -199,7 +199,7 @@ export class AnalyticsService {
       { $limit: limit },
     ];
 
-    return await Case.aggregate(pipeline as any);
+    return await Lead.aggregate(pipeline as any);
   }
 
   /**
@@ -212,7 +212,7 @@ export class AnalyticsService {
         $group: {
           _id: "$bankId",
           totalVolume: { $sum: "$loanAmount" },
-          caseCount: { $sum: 1 },
+          leadCount: { $sum: 1 },
           commissionEarned: { $sum: "$bankExpectedCommission" },
         },
       },
@@ -232,7 +232,7 @@ export class AnalyticsService {
           bankName: "$bank.bankName",
           branch: "$bank.branch",
           totalVolume: 1,
-          caseCount: 1,
+          leadCount: 1,
           commissionEarned: 1,
         },
       },
@@ -240,7 +240,7 @@ export class AnalyticsService {
       { $limit: limit },
     ];
 
-    return await Case.aggregate(pipeline as any);
+    return await Lead.aggregate(pipeline as any);
   }
 
   /**
@@ -266,7 +266,7 @@ export class AnalyticsService {
         $group: {
           _id: "$entity.state",
           totalVolume: { $sum: "$loanAmount" },
-          caseCount: { $sum: 1 },
+          leadCount: { $sum: 1 },
         },
       },
       {
@@ -274,12 +274,12 @@ export class AnalyticsService {
           _id: 0,
           state: { $ifNull: ["$_id", "Unknown"] },
           totalVolume: 1,
-          caseCount: 1,
+          leadCount: 1,
         },
       },
       { $sort: { totalVolume: -1 } },
     ];
 
-    return await Case.aggregate(pipeline as any);
+    return await Lead.aggregate(pipeline as any);
   }
 }

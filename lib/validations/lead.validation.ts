@@ -1,10 +1,19 @@
 import { z } from "zod";
 
-export const CaseValidationSchema = z.object({
+export const LeadValidationSchema = z.object({
   applicationNumber: z.string().min(3, "Application Number must be at least 3 characters"),
   applicantName: z.string().min(2, "Applicant Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
-  phone: z.string().regex(/^[6-9]\d{9}$/, "Invalid mobile number (10 digits starting with 6-9)"),
+  phone: z
+    .string()
+    // Normalize real-world formats ("+91 98765 43210", "098765-43210") to a bare 10-digit number
+    .transform((val) => {
+      let digits = val.replace(/\D/g, "");
+      if (digits.length === 12 && digits.startsWith("91")) digits = digits.slice(2);
+      if (digits.length === 11 && digits.startsWith("0")) digits = digits.slice(1);
+      return digits;
+    })
+    .refine((val) => /^[6-9]\d{9}$/.test(val), "Invalid mobile number (10 digits starting with 6-9)"),
   loanAmount: z.coerce.number().min(1, "Loan Amount must be greater than 0"),
   loanType: z.string().min(1, "Loan Type is required"),
   bankId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid Bank ID"),

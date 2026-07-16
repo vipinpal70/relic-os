@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import Integration from "@/lib/models/Integration";
-import Case from "@/lib/models/Case";
+import Lead from "@/lib/models/Lead";
 import Bank from "@/lib/models/Bank";
 import ChannelPartner from "@/lib/models/ChannelPartner";
 import User from "@/lib/models/User";
@@ -222,11 +222,11 @@ export async function POST() {
         }
       }
 
-      // 4. Find or create Case — preserve existing status on re-sync
-      const existingCase = await Case.findOne({ applicationNumber: application_number });
-      const isNew = !existingCase;
+      // 4. Find or create Lead — preserve existing status on re-sync
+      const existingLead = await Lead.findOne({ applicationNumber: application_number });
+      const isNew = !existingLead;
 
-      const caseDoc = await Case.findOneAndUpdate(
+      const leadDoc = await Lead.findOneAndUpdate(
         { applicationNumber: application_number },
         {
           $set: {
@@ -256,8 +256,8 @@ export async function POST() {
       // Only log an activity entry when a new record is created (not on re-sync updates)
       if (isNew) {
         await ActivityLog.create({
-          entityType: "Case",
-          entityId: caseDoc._id,
+          entityType: "Lead",
+          entityId: leadDoc._id,
           action: "Google Sheet Import",
           details: `Imported applicant details for ${applicant_name} via Sync.`,
           performedBy: "Google Sheets Sync",

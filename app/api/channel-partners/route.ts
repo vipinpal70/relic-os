@@ -5,7 +5,7 @@ import { ChannelPartnerValidationSchema } from "@/lib/validations/channel-partne
 import { ChannelPartnerService } from "@/lib/services/channel-partner.service";
 import { ChannelPartnerRepository } from "@/lib/repositories/channel-partner.repository";
 import ChannelPartner from "@/lib/models/ChannelPartner";
-import Case from "@/lib/models/Case";
+import Lead from "@/lib/models/Lead";
 
 const partnerService = new ChannelPartnerService();
 const partnerRepo = new ChannelPartnerRepository();
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    const monthCasesStats = await Case.aggregate([
+    const monthLeadsStats = await Lead.aggregate([
       {
         $match: {
           channelPartnerId: { $ne: null },
@@ -59,14 +59,14 @@ export async function GET(request: Request) {
       {
         $group: {
           _id: null,
-          casesCount: { $sum: 1 },
+          leadsCount: { $sum: 1 },
           loanAmount: { $sum: "$loanAmount" },
           commissionEarned: { $sum: "$partnerExpectedCommission" },
         },
       },
     ]);
 
-    const allTimeCommissions = await Case.aggregate([
+    const allTimeCommissions = await Lead.aggregate([
       {
         $match: {
           channelPartnerId: { $ne: null },
@@ -82,15 +82,15 @@ export async function GET(request: Request) {
       },
     ]);
 
-    // Calculate aggregated cases and amounts per partner to enrich the list
+    // Calculate aggregated leads and amounts per partner to enrich the list
     const enrichedData = await Promise.all(
       result.data.map(async (partner) => {
-        const partnerStats = await Case.aggregate([
+        const partnerStats = await Lead.aggregate([
           { $match: { channelPartnerId: partner._id, isDeleted: false } },
           {
             $group: {
               _id: null,
-              totalCases: { $sum: 1 },
+              totalLeads: { $sum: 1 },
               loanAmount: { $sum: "$loanAmount" },
               commissionEarned: { $sum: "$partnerExpectedCommission" },
               commissionPaid: { $sum: "$partnerPaidCommission" },
@@ -100,7 +100,7 @@ export async function GET(request: Request) {
         ]);
 
         const stats = partnerStats[0] || {
-          totalCases: 0,
+          totalLeads: 0,
           loanAmount: 0,
           commissionEarned: 0,
           commissionPaid: 0,
@@ -118,9 +118,9 @@ export async function GET(request: Request) {
       total: totalPartners,
       active: activePartners,
       inactive: inactivePartners,
-      monthCases: monthCasesStats[0]?.casesCount || 0,
-      monthLoanAmount: monthCasesStats[0]?.loanAmount || 0,
-      monthCommission: monthCasesStats[0]?.commissionEarned || 0,
+      monthLeads: monthLeadsStats[0]?.leadsCount || 0,
+      monthLoanAmount: monthLeadsStats[0]?.loanAmount || 0,
+      monthCommission: monthLeadsStats[0]?.commissionEarned || 0,
       paidCommission: allTimeCommissions[0]?.paidCommission || 0,
       pendingCommission: allTimeCommissions[0]?.pendingCommission || 0,
     };

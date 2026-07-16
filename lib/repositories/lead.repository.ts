@@ -1,29 +1,29 @@
-import Case, { ICase } from "@/lib/models/Case";
+import Lead, { ILead } from "@/lib/models/Lead";
 
-export class CaseRepository {
-  async create(data: Partial<ICase>): Promise<ICase> {
-    return await Case.create(data);
+export class LeadRepository {
+  async create(data: Partial<ILead>): Promise<ILead> {
+    return await Lead.create(data);
   }
 
-  async findById(id: string): Promise<ICase | null> {
-    return await Case.findOne({ _id: id, isDeleted: false })
+  async findById(id: string): Promise<ILead | null> {
+    return await Lead.findOne({ _id: id, isDeleted: false })
       .populate("bankId", "bankName branch")
       .populate("channelPartnerId", "name companyName")
       .populate("assignedUserId", "name email");
   }
 
-  async findOne(filter: any): Promise<ICase | null> {
-    return await Case.findOne({ ...filter, isDeleted: false })
+  async findOne(filter: any): Promise<ILead | null> {
+    return await Lead.findOne({ ...filter, isDeleted: false })
       .populate("bankId", "bankName branch")
       .populate("channelPartnerId", "name companyName");
   }
 
-  async update(id: string, data: any): Promise<ICase | null> {
-    return await Case.findOneAndUpdate({ _id: id, isDeleted: false }, data, { new: true });
+  async update(id: string, data: any): Promise<ILead | null> {
+    return await Lead.findOneAndUpdate({ _id: id, isDeleted: false }, data, { new: true });
   }
 
-  async softDelete(id: string, updatedBy: string): Promise<ICase | null> {
-    return await Case.findOneAndUpdate(
+  async softDelete(id: string, updatedBy: string): Promise<ILead | null> {
+    return await Lead.findOneAndUpdate(
       { _id: id, isDeleted: false },
       { isDeleted: true, updatedBy },
       { new: true }
@@ -42,7 +42,7 @@ export class CaseRepository {
     limit?: number;
     sortField?: string;
     sortOrder?: "asc" | "desc";
-  }): Promise<{ data: ICase[]; total: number }> {
+  }): Promise<{ data: ILead[]; total: number }> {
     const {
       search,
       status,
@@ -88,25 +88,25 @@ export class CaseRepository {
     const skip = (page - 1) * limit;
 
     const [data, total] = await Promise.all([
-      Case.find(filter)
+      Lead.find(filter)
         .populate("bankId", "bankName branch")
         .populate("channelPartnerId", "name companyName")
         .sort(sort)
         .skip(skip)
         .limit(limit),
-      Case.countDocuments(filter),
+      Lead.countDocuments(filter),
     ]);
 
     return { data, total };
   }
 
   async count(filter: any): Promise<number> {
-    return await Case.countDocuments({ ...filter, isDeleted: false });
+    return await Lead.countDocuments({ ...filter, isDeleted: false });
   }
 
-  async findByEntityId(entityType: "Bank" | "ChannelPartner", id: string): Promise<ICase[]> {
+  async findByEntityId(entityType: "Bank" | "ChannelPartner", id: string): Promise<ILead[]> {
     const filter = entityType === "Bank" ? { bankId: id } : { channelPartnerId: id };
-    return await Case.find({ ...filter, isDeleted: false })
+    return await Lead.find({ ...filter, isDeleted: false })
       .populate("bankId", "bankName branch")
       .populate("channelPartnerId", "name companyName")
       .sort({ createdAt: -1 });

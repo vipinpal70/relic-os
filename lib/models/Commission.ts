@@ -19,7 +19,7 @@ export interface ICommission extends Document {
 
 const CommissionSchema = new Schema<ICommission>(
   {
-    caseId: { type: Schema.Types.ObjectId, ref: "Case", required: true },
+    caseId: { type: Schema.Types.ObjectId, ref: "Lead", required: true },
     entityType: { type: String, enum: ["Bank", "ChannelPartner"], required: true },
     entityId: {
       type: Schema.Types.ObjectId,
