@@ -211,7 +211,8 @@ export default function LeadsPage() {
                 className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg text-sm font-medium hover:bg-[#1D4ED8] transition-colors"
               >
                 <Plus size={15} />
-                Add Lead
+                <span className="md:block hidden">Add Lead</span>
+                <span className="md:hidden block">Add</span>
               </button>
             </>
           }

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
-import { formatLead } from "@/lib/utils";
 import { verifyPermission } from "@/lib/middlewares/auth.middleware";
 import { LeadRepository } from "@/lib/repositories/lead.repository";
 
@@ -40,9 +39,10 @@ export async function GET(
       sortOrder,
     });
 
-    const formattedData = result.data.map(formatLead);
+    // Return raw lead documents: the Cases tab renders model fields
+    // (_id, applicantName, partnerExpectedCommission, ...) that formatLead strips.
     return NextResponse.json({
-      data: formattedData,
+      data: result.data,
       total: result.total,
     });
   } catch (error: any) {

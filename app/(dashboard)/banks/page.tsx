@@ -15,8 +15,6 @@ export default function BanksPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [stateFilter, setStateFilter] = useState("");
-  const [cityFilter, setCityFilter] = useState("");
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [sortField, setSortField] = useState("createdAt");
@@ -26,8 +24,6 @@ export default function BanksPage() {
   const { data: banksResponse, total, isLoading, stats, createBank, isCreating } = useBanks({
     search: searchTerm,
     status: statusFilter,
-    state: stateFilter,
-    city: cityFilter,
     page,
     limit,
     sortField,
@@ -230,11 +226,13 @@ export default function BanksPage() {
     <AppLayout title="Banks">
       <div className="space-y-6">
         {/* Header Title & Button */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-[#111827]">Lender Bank Management</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-[#111827]">Lender Bank Management</h1>
             <p className="text-sm text-[#6B7280]">Add lenders, view case volumes, track expected payout percentages, and manage settings.</p>
           </div>
+
+          <div className="item-start">
           <button
             onClick={() => {
               setFormErrors({});
@@ -243,8 +241,10 @@ export default function BanksPage() {
             className="flex items-center justify-center gap-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-4 py-2.5 rounded-xl font-medium transition-all shadow-sm hover:shadow"
           >
             <Plus size={18} />
-            <span>Add Lender Bank</span>
+            <span className="hidden md:block">Add Lender Bank</span>
+            <span className="md:hidden">Add</span>
           </button>
+          </div>
         </div>
 
         {/* Statistics Widgets */}
@@ -268,7 +268,7 @@ export default function BanksPage() {
             </div>
             <div>
               <p className="text-xs font-medium text-[#6B7280] uppercase tracking-wide">Month Cases</p>
-              <h3 className="text-xl font-bold text-[#111827] mt-0.5">{stats?.monthCases || 0}</h3>
+              <h3 className="text-xl font-bold text-[#111827] mt-0.5">{stats?.monthLeads || 0}</h3>
               <p className="text-xs text-[#6B7280] mt-0.5">
                 Loan Volume: <span className="font-semibold text-[#111827]">{formatCurrency(stats?.monthLoanAmount || 0)}</span>
               </p>
@@ -300,12 +300,12 @@ export default function BanksPage() {
 
         {/* Filters and Actions toolbar */}
         <div className="card p-4 flex flex-col lg:flex-row items-center gap-4 justify-between bg-white/70 backdrop-blur-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 w-full lg:w-auto flex-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full lg:w-auto flex-1">
             <div className="relative">
               <Search className="absolute left-3.5 top-2.5 text-[#9CA3AF] w-4.5 h-4.5" />
               <input
                 type="text"
-                placeholder="Search banks/branches..."
+                placeholder="Search banks, branches, location..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-9.5 pr-3 py-1.5 border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB]"
@@ -317,26 +317,10 @@ export default function BanksPage() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-3 py-1.5 border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] bg-white cursor-pointer"
             >
-              <option value="">All Statuses</option>
+              <option value="">All Status</option>
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
             </select>
-
-            <input
-              type="text"
-              placeholder="State (e.g. KA)"
-              value={stateFilter}
-              onChange={(e) => setStateFilter(e.target.value)}
-              className="px-3 py-1.5 border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
-            />
-
-            <input
-              type="text"
-              placeholder="City (e.g. Bengaluru)"
-              value={cityFilter}
-              onChange={(e) => setCityFilter(e.target.value)}
-              className="px-3 py-1.5 border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
-            />
           </div>
 
           <button
@@ -405,7 +389,9 @@ export default function BanksPage() {
                       </td>
                       <td className="font-semibold text-[#4B5563]">{bank.branch}</td>
                       <td className="text-sm font-mono text-[#4B5563]">{bank.ifsc}</td>
-                      <td className="text-right font-medium">{bank.stats?.totalLeads || 0}</td>
+                      <td className="text-right font-medium">
+                        {bank.stats?.totalLeads ? bank.stats.totalLeads : <span className="text-[#9CA3AF]">No cases</span>}
+                      </td>
                       <td className="text-right font-semibold">{formatCurrency(bank.stats?.loanAmount || 0)}</td>
                       <td className="text-right font-bold text-[#22C55E]">{formatCurrency(bank.stats?.commissionExpected || 0)}</td>
                       <td className="text-right font-bold text-red-500">{formatCurrency(bank.stats?.commissionPending || 0)}</td>
@@ -515,7 +501,7 @@ export default function BanksPage() {
                   {/* Basic Details Section */}
                   <div className="space-y-4">
                     <h4 className="text-sm font-bold text-[#111827] uppercase tracking-wide">Branch Details</h4>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-semibold text-[#4B5563] mb-1">Bank Name *</label>
                         <input
@@ -593,7 +579,7 @@ export default function BanksPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="col-span-2">
                         <label className="block text-xs font-semibold text-[#4B5563] mb-1">Branch Address</label>
                         <input
@@ -616,7 +602,7 @@ export default function BanksPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-semibold text-[#4B5563] mb-1">City</label>
                         <input
@@ -666,7 +652,7 @@ export default function BanksPage() {
                             </button>
                           )}
 
-                          <div className="grid grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div>
                               <label className="block text-[10px] font-bold text-[#6B7280] mb-0.5">Loan Type *</label>
                               <select
@@ -716,7 +702,7 @@ export default function BanksPage() {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-4 gap-2.5 mt-2.5">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-2.5">
                             <div className="col-span-2">
                               <div className="grid grid-cols-2 gap-2">
                                 <div>

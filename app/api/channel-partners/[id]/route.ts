@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { verifyPermission } from "@/lib/middlewares/auth.middleware";
-import { ChannelPartnerValidationSchema } from "@/lib/validations/channel-partner.validation";
+import { ChannelPartnerUpdateValidationSchema } from "@/lib/validations/channel-partner.validation";
 import { ChannelPartnerService } from "@/lib/services/channel-partner.service";
 
 const partnerService = new ChannelPartnerService();
@@ -45,7 +45,7 @@ export async function PATCH(
     const { user } = authResult;
 
     const body = await request.json();
-    const validationResult = ChannelPartnerValidationSchema.partial().safeParse(body);
+    const validationResult = ChannelPartnerUpdateValidationSchema.safeParse(body);
 
     if (!validationResult.success) {
       return NextResponse.json(

@@ -15,8 +15,10 @@ import {
   Loader2, Mail, Phone, MapPin, Calendar, ShieldCheck, UserCheck,
   Percent, ArrowUpDown, ChevronLeft, ChevronRight, Plus, Trash2,
   DollarSign, FileText, CalendarCheck, Settings, BarChart2, Briefcase,
-  AlertCircle, CheckCircle, PlusCircle, CreditCard, Clock, CheckSquare, Search
+  AlertCircle, CheckCircle, PlusCircle, CreditCard, Clock, CheckSquare, Search,
+  Pencil, X
 } from "lucide-react";
+import { useSession } from "@/components/providers/SessionProvider";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -117,10 +119,10 @@ export default function BankProfilePage() {
           </div>
 
           {/* Quick Stats Header Summary */}
-          <div className="grid grid-cols-3 gap-6 divide-x divide-gray-100 md:border-l md:border-gray-100 md:pl-8">
+          <div className="grid grid-cols-3 gap-3 sm:gap-6 divide-x divide-gray-100 md:border-l md:border-gray-100 md:pl-8">
             <div className="px-2">
               <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wide">Cases Logged</p>
-              <p className="text-lg font-bold text-[#111827] mt-0.5">{stats?.allTime.totalLeads || 0}</p>
+              <p className="text-lg font-bold text-[#111827] mt-0.5">{stats?.allTime.totalLeads ? stats.allTime.totalLeads : "No cases"}</p>
             </div>
             <div className="pl-4">
               <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wide">Disbursed Amount</p>
@@ -156,7 +158,7 @@ export default function BankProfilePage() {
         {/* Tab Contents */}
         <div className="space-y-6">
           {activeTab === "overview" && (
-            <OverviewTab bank={bank} stats={stats} />
+            <OverviewTab bank={bank} stats={stats} updateBank={updateBank} />
           )}
           {activeTab === "commission" && (
             <CommissionTab bank={bank} updateBank={updateBank} />
@@ -183,14 +185,29 @@ export default function BankProfilePage() {
 // TAB COMPONENTS
 // ----------------------------------------------------
 
-function OverviewTab({ bank, stats }: { bank: any; stats: any }) {
+function OverviewTab({ bank, stats, updateBank }: { bank: any; stats: any; updateBank: any }) {
+  const { user } = useSession();
+  const isAdmin = user?.role === "Admin";
+  const [isEditOpen, setIsEditOpen] = useState(false);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Left Details Grid */}
       <div className="lg:col-span-2 space-y-6">
         <div className="card p-6 space-y-4">
-          <h3 className="font-bold text-[#111827] text-base">Bank Credentials & Identity</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-[#111827] text-base">Bank Credentials & Identity</h3>
+            {isAdmin && (
+              <button
+                onClick={() => setIsEditOpen(true)}
+                className="flex items-center gap-1.5 border border-[#E5E7EB] hover:bg-gray-50 px-3.5 py-2 rounded-xl text-xs font-bold text-[#4B5563] transition-all cursor-pointer"
+              >
+                <Pencil size={13} />
+                <span>Edit Details</span>
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <p className="text-xs font-semibold text-[#6B7280]">Bank Name</p>
               <p className="text-sm font-bold text-[#111827] mt-0.5">{bank.bankName}</p>
@@ -281,7 +298,7 @@ function OverviewTab({ bank, stats }: { bank: any; stats: any }) {
             <div className="p-3.5 bg-gray-50/70 border border-gray-100 rounded-xl flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wide">Current Month Cases</p>
-                <p className="text-base font-bold text-[#111827] mt-0.5">{stats?.currentMonth.cases || 0}</p>
+                <p className="text-base font-bold text-[#111827] mt-0.5">{stats?.currentMonth.leads ? stats.currentMonth.leads : "No cases"}</p>
               </div>
               <Clock className="text-[#6B7280] w-5 h-5" />
             </div>
@@ -317,6 +334,245 @@ function OverviewTab({ bank, stats }: { bank: any; stats: any }) {
           </div>
         </div>
       </div>
+
+      {/* Edit Details Drawer (Admin only) */}
+      <AnimatePresence>
+        {isEditOpen && (
+          <EditBankDrawer
+            bank={bank}
+            updateBank={updateBank}
+            onClose={() => setIsEditOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function EditBankDrawer({ bank, updateBank, onClose }: { bank: any; updateBank: any; onClose: () => void }) {
+  const [saving, setSaving] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [details, setDetails] = useState({
+    bankName: bank.bankName || "",
+    branch: bank.branch || "",
+    ifsc: bank.ifsc || "",
+    managerName: bank.managerName || "",
+    phone: bank.phone || "",
+    email: bank.email || "",
+    address: bank.address || "",
+    state: bank.state || "",
+    city: bank.city || "",
+  });
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+
+    if (!details.bankName.trim() || details.bankName.trim().length < 2) {
+      errors.bankName = "Bank name must be at least 2 characters";
+    }
+    if (!details.branch.trim() || details.branch.trim().length < 2) {
+      errors.branch = "Branch must be at least 2 characters";
+    }
+    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(details.ifsc)) {
+      errors.ifsc = "Invalid IFSC code (e.g. SBIN0001234)";
+    }
+    if (details.phone && !/^[6-9]\d{9}$/.test(details.phone)) {
+      errors.phone = "Invalid Indian mobile (10 digits starting with 6-9)";
+    }
+    if (details.email && !/\S+@\S+\.\S+/.test(details.email)) {
+      errors.email = "Invalid email address";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    setSaving(true);
+    try {
+      await updateBank(details);
+      onClose();
+    } catch (err: any) {
+      setFormErrors({ form: err.message || "Failed to update bank" });
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end">
+      {/* Backing Cover */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-black/30 backdrop-blur-xs"
+      />
+
+      {/* Slider Body */}
+      <motion.div
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 220 }}
+        className="bg-white w-full max-w-2xl h-full shadow-2xl relative flex flex-col z-10 border-l border-[#E5E7EB]"
+      >
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-[#E5E7EB] flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-[#111827]">Edit Lender Bank</h3>
+            <p className="text-xs text-[#6B7280]">Update the credentials and identity details of this bank branch.</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 hover:bg-gray-100 rounded-xl text-gray-500"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+          {formErrors.form && (
+            <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl flex items-center gap-2">
+              <AlertCircle size={16} />
+              <span>{formErrors.form}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-[#4B5563] mb-1">Bank Name *</label>
+              <input
+                type="text"
+                required
+                value={details.bankName}
+                onChange={(e) => setDetails({ ...details, bankName: e.target.value })}
+                className={`w-full px-3.5 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] ${
+                  formErrors.bankName ? "border-red-500" : "border-[#E5E7EB]"
+                }`}
+              />
+              {formErrors.bankName && <p className="text-xs text-red-500 mt-1">{formErrors.bankName}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#4B5563] mb-1">Branch *</label>
+              <input
+                type="text"
+                required
+                value={details.branch}
+                onChange={(e) => setDetails({ ...details, branch: e.target.value })}
+                className={`w-full px-3.5 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] ${
+                  formErrors.branch ? "border-red-500" : "border-[#E5E7EB]"
+                }`}
+              />
+              {formErrors.branch && <p className="text-xs text-red-500 mt-1">{formErrors.branch}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#4B5563] mb-1">IFSC Code *</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. SBIN0001234"
+                value={details.ifsc}
+                onChange={(e) => setDetails({ ...details, ifsc: e.target.value.toUpperCase() })}
+                className={`w-full px-3.5 py-2 border rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#2563EB] ${
+                  formErrors.ifsc ? "border-red-500" : "border-[#E5E7EB]"
+                }`}
+              />
+              {formErrors.ifsc && <p className="text-xs text-red-500 mt-1">{formErrors.ifsc}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#4B5563] mb-1">Branch Manager</label>
+              <input
+                type="text"
+                value={details.managerName}
+                onChange={(e) => setDetails({ ...details, managerName: e.target.value })}
+                className="w-full px-3.5 py-2 border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#4B5563] mb-1">Phone Number</label>
+              <input
+                type="text"
+                value={details.phone}
+                onChange={(e) => setDetails({ ...details, phone: e.target.value })}
+                className={`w-full px-3.5 py-2 border rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#2563EB] ${
+                  formErrors.phone ? "border-red-500" : "border-[#E5E7EB]"
+                }`}
+              />
+              {formErrors.phone && <p className="text-xs text-red-500 mt-1">{formErrors.phone}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#4B5563] mb-1">Email ID</label>
+              <input
+                type="email"
+                value={details.email}
+                onChange={(e) => setDetails({ ...details, email: e.target.value })}
+                className={`w-full px-3.5 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] ${
+                  formErrors.email ? "border-red-500" : "border-[#E5E7EB]"
+                }`}
+              />
+              {formErrors.email && <p className="text-xs text-red-500 mt-1">{formErrors.email}</p>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="col-span-2">
+              <label className="block text-xs font-semibold text-[#4B5563] mb-1">Full Address</label>
+              <input
+                type="text"
+                value={details.address}
+                onChange={(e) => setDetails({ ...details, address: e.target.value })}
+                className="w-full px-3.5 py-2 border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#4B5563] mb-1">City</label>
+              <input
+                type="text"
+                value={details.city}
+                onChange={(e) => setDetails({ ...details, city: e.target.value })}
+                className="w-full px-3.5 py-2 border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-[#4B5563] mb-1">State</label>
+              <input
+                type="text"
+                placeholder="e.g. KA"
+                value={details.state}
+                onChange={(e) => setDetails({ ...details, state: e.target.value })}
+                className="w-full px-3.5 py-2 border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#E5E7EB]">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-[#E5E7EB] rounded-xl text-sm font-semibold text-[#4B5563] hover:bg-[#F9FAFB] transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-medium rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-sm"
+            >
+              {saving && <Loader2 size={15} className="animate-spin" />}
+              <span>Save Changes</span>
+            </button>
+          </div>
+        </form>
+      </motion.div>
     </div>
   );
 }
@@ -610,7 +866,7 @@ function CasesTab({ bankId }: { bankId: string }) {
           onChange={(e) => setStatus(e.target.value)}
           className="px-3 py-1.5 border border-[#E5E7EB] rounded-xl text-sm bg-white cursor-pointer"
         >
-          <option value="">All Statuses</option>
+          <option value="">All Status</option>
           <option value="New">New</option>
           <option value="Pending">Pending</option>
           <option value="Approved">Approved</option>
@@ -1012,7 +1268,7 @@ function TransactionsTab({ bankId, stats }: { bankId: string; stats: any }) {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-[#4B5563] mb-1">Amount Received (₹) *</label>
                     <input
@@ -1036,7 +1292,7 @@ function TransactionsTab({ bankId, stats }: { bankId: string; stats: any }) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-[#4B5563] mb-1">Payment Mode</label>
                     <select

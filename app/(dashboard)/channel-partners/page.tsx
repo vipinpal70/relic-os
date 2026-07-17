@@ -17,8 +17,6 @@ export default function ChannelPartnersPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [stateFilter, setStateFilter] = useState("");
-  const [cityFilter, setCityFilter] = useState("");
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [sortField, setSortField] = useState("createdAt");
@@ -28,8 +26,6 @@ export default function ChannelPartnersPage() {
   const { data: partnersResponse, total, isLoading, stats, createPartner, isCreating } = useChannelPartners({
     search: searchTerm,
     status: statusFilter,
-    state: stateFilter,
-    city: cityFilter,
     page,
     limit,
     sortField,
@@ -242,11 +238,13 @@ export default function ChannelPartnersPage() {
     <AppLayout title="Channel Partners">
       <div className="space-y-6">
         {/* Header Title & Button */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-[#111827]">Channel Partner Directory</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-[#111827]">Channel Partner Directory</h1>
             <p className="text-sm text-[#6B7280]">Oversee distribution networks, payout commissions, and performance analytics.</p>
           </div>
+
+          <div className="item-start">
           <button
             onClick={() => {
               setFormErrors({});
@@ -255,8 +253,10 @@ export default function ChannelPartnersPage() {
             className="flex items-center justify-center gap-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-4 py-2.5 rounded-xl font-medium transition-all shadow-sm hover:shadow"
           >
             <Plus size={18} />
-            <span>Add Channel Partner</span>
+            <span className="md:block hidden">Add Channel Partner</span>
+            <span className="block md:hidden">Add</span>
           </button>
+          </div>
         </div>
 
         {/* Statistics Widgets */}
@@ -280,7 +280,7 @@ export default function ChannelPartnersPage() {
             </div>
             <div>
               <p className="text-xs font-medium text-[#6B7280] uppercase tracking-wide">Month Cases</p>
-              <h3 className="text-xl font-bold text-[#111827] mt-0.5">{stats?.monthCases || 0}</h3>
+              <h3 className="text-xl font-bold text-[#111827] mt-0.5">{stats?.monthLeads || 0}</h3>
               <p className="text-xs text-[#6B7280] mt-0.5">
                 Volume: <span className="font-semibold text-[#111827]">{formatCurrency(stats?.monthLoanAmount || 0)}</span>
               </p>
@@ -314,12 +314,12 @@ export default function ChannelPartnersPage() {
 
         {/* Filters and Actions toolbar */}
         <div className="card p-4 flex flex-col lg:flex-row items-center gap-4 justify-between bg-white/70 backdrop-blur-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 w-full lg:w-auto flex-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full lg:w-auto flex-1">
             <div className="relative">
               <Search className="absolute left-3.5 top-2.5 text-[#9CA3AF] w-4.5 h-4.5" />
               <input
                 type="text"
-                placeholder="Search partners..."
+                placeholder="Search partners, location..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-9.5 pr-3 py-1.5 border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB]"
@@ -331,26 +331,10 @@ export default function ChannelPartnersPage() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-3 py-1.5 border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] bg-white cursor-pointer"
             >
-              <option value="">All Statuses</option>
+              <option value="">All Status</option>
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
             </select>
-
-            <input
-              type="text"
-              placeholder="State (e.g. MH)"
-              value={stateFilter}
-              onChange={(e) => setStateFilter(e.target.value)}
-              className="px-3 py-1.5 border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
-            />
-
-            <input
-              type="text"
-              placeholder="City (e.g. Pune)"
-              value={cityFilter}
-              onChange={(e) => setCityFilter(e.target.value)}
-              className="px-3 py-1.5 border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
-            />
           </div>
 
           <button
@@ -419,7 +403,9 @@ export default function ChannelPartnersPage() {
                       </td>
                       <td className="font-semibold text-[#4B5563]">{partner.companyName}</td>
                       <td className="text-sm font-mono text-[#4B5563]">{partner.phone}</td>
-                      <td className="text-right font-medium">{partner.stats?.totalLeads || 0}</td>
+                      <td className="text-right font-medium">
+                        {partner.stats?.totalLeads ? partner.stats.totalLeads : <span className="text-[#9CA3AF]">No cases</span>}
+                      </td>
                       <td className="text-right font-semibold">{formatCurrency(partner.stats?.loanAmount || 0)}</td>
                       <td className="text-right font-bold text-[#22C55E]">{formatCurrency(partner.stats?.commissionEarned || 0)}</td>
                       <td className="text-right font-bold text-red-500">{formatCurrency(partner.stats?.commissionPending || 0)}</td>
@@ -529,7 +515,7 @@ export default function ChannelPartnersPage() {
                   {/* Basic Details Section */}
                   <div className="space-y-4">
                     <h4 className="text-sm font-bold text-[#111827] uppercase tracking-wide">Basic Details</h4>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-semibold text-[#4B5563] mb-1">Partner Name *</label>
                         <input
@@ -604,7 +590,7 @@ export default function ChannelPartnersPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-xs font-semibold text-[#4B5563] mb-1">GSTIN</label>
                         <input
@@ -642,7 +628,7 @@ export default function ChannelPartnersPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="col-span-2">
                         <label className="block text-xs font-semibold text-[#4B5563] mb-1">Full Address</label>
                         <input
@@ -702,7 +688,7 @@ export default function ChannelPartnersPage() {
                             </button>
                           )}
 
-                          <div className="grid grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div>
                               <label className="block text-xs font-bold text-[#6B7280] mb-1">Loan Type *</label>
                               <select
@@ -752,7 +738,7 @@ export default function ChannelPartnersPage() {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-4 gap-2.5 mt-2.5">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-2.5">
                             <div className="col-span-2">
                               <div className="grid grid-cols-2 gap-2">
                                 <div>

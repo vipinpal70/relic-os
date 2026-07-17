@@ -1,13 +1,14 @@
 "use client";
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, Menu } from "lucide-react";
 import { notifications } from "@/lib/data";
 import { useSession } from "@/components/providers/SessionProvider";
 
 interface HeaderProps {
   title: string;
+  onMenuClick?: () => void;
 }
 
-export function Header({ title }: HeaderProps) {
+export function Header({ title, onMenuClick }: HeaderProps) {
   const unread = notifications.filter((n) => !n.is_read).length;
   const { user } = useSession();
 
@@ -22,10 +23,22 @@ export function Header({ title }: HeaderProps) {
 
   return (
     <header
-      style={{ height: "var(--header-height)", marginLeft: "var(--sidebar-width)" }}
-      className="fixed top-0 right-0 left-0 bg-white border-b border-[#E5E7EB] flex items-center px-6 gap-4 z-20"
+      style={{ height: "var(--header-height)" }}
+      className="fixed top-0 right-0 left-0 lg:left-[var(--sidebar-width)] bg-white border-b border-[#E5E7EB] flex items-center px-4 sm:px-6 gap-3 z-20"
     >
-      <div className="flex-1 max-w-sm ml-4">
+      {/* Hamburger menu (mobile only) */}
+      <button
+        onClick={onMenuClick}
+        className="p-2 -ml-1 rounded-lg hover:bg-[#F7F8FA] transition-colors lg:hidden"
+        aria-label="Open menu"
+      >
+        <Menu className="w-5 h-5 text-[#475569]" />
+      </button>
+
+      {/* Page title (mobile only — search takes this spot on desktop) */}
+      <h2 className="flex-1 min-w-0 text-base font-bold text-[#111827] truncate md:hidden">{title}</h2>
+
+      <div className="hidden md:block flex-1 max-w-sm lg:ml-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
           <input
@@ -45,7 +58,7 @@ export function Header({ title }: HeaderProps) {
             </span>
           )}
         </button>
-        <div 
+        <div
           title={`${user?.name} (${user?.role})`}
           className="w-8 h-8 rounded-full gradient-blue flex items-center justify-center text-white text-xs font-bold cursor-pointer"
         >
@@ -55,4 +68,3 @@ export function Header({ title }: HeaderProps) {
     </header>
   );
 }
-

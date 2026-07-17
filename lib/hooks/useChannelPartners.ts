@@ -43,6 +43,17 @@ export interface ChannelPartnerStats {
   };
 }
 
+export interface ChannelPartnerListStats {
+  total: number;
+  active: number;
+  inactive: number;
+  monthLeads: number;
+  monthLoanAmount: number;
+  monthCommission: number;
+  paidCommission: number;
+  pendingCommission: number;
+}
+
 export function useChannelPartners(params: {
   search?: string;
   status?: string;
@@ -55,7 +66,7 @@ export function useChannelPartners(params: {
 } = {}) {
   const queryClient = useQueryClient();
 
-  const partnersQuery = useQuery<{ data: ChannelPartner[]; total: number }>({
+  const partnersQuery = useQuery<{ data: ChannelPartner[]; total: number; stats: ChannelPartnerListStats }>({
     queryKey: ["channelPartners", params],
     queryFn: async () => {
       const queryStr = new URLSearchParams(params as any).toString();
@@ -86,6 +97,7 @@ export function useChannelPartners(params: {
   return {
     data: partnersQuery.data?.data || [],
     total: partnersQuery.data?.total || 0,
+    stats: partnersQuery.data?.stats,
     isLoading: partnersQuery.isLoading,
     error: partnersQuery.error,
     createPartner: createPartnerMutation.mutateAsync,

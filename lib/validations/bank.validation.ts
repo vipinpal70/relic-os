@@ -22,7 +22,19 @@ export const CommissionRuleValidationSchema = z.object({
   path: ["effectiveTo"],
 });
 
-export const BankValidationSchema = z.object({
+// Validate that there are no duplicate loan types in the commission table for the same active period
+const noDuplicateLoanTypes = {
+  check: (commissionTable?: Array<{ loanType: string }>) => {
+    if (!commissionTable) return true;
+    const loanTypes = commissionTable.map(r => r.loanType.toLowerCase());
+    const uniqueLoanTypes = new Set(loanTypes);
+    return uniqueLoanTypes.size === loanTypes.length;
+  },
+  message: "Duplicate Loan Types are not allowed in the commission table",
+  path: ["commissionTable"],
+};
+
+const BankBaseSchema = z.object({
   bankName: z.string().min(2, "Bank Name must be at least 2 characters"),
   branch: z.string().min(2, "Branch must be at least 2 characters"),
   ifsc: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, "Invalid IFSC code (e.g. SBIN0001234)"),
@@ -38,12 +50,16 @@ export const BankValidationSchema = z.object({
   city: z.string().min(1, "City is required").optional().or(z.literal("")),
   status: z.enum(["Active", "Inactive"]).default("Active"),
   commissionTable: z.array(CommissionRuleValidationSchema).default([]),
-}).refine(data => {
-  // Validate that there are no duplicate loan types in the commission table for the same active period
-  const loanTypes = data.commissionTable.map(r => r.loanType.toLowerCase());
-  const uniqueLoanTypes = new Set(loanTypes);
-  return uniqueLoanTypes.size === loanTypes.length;
-}, {
-  message: "Duplicate Loan Types are not allowed in the commission table",
-  path: ["commissionTable"],
 });
+
+export const BankValidationSchema = BankBaseSchema.refine(
+  data => noDuplicateLoanTypes.check(data.commissionTable),
+  { message: noDuplicateLoanTypes.message, path: noDuplicateLoanTypes.path }
+);
+
+// Zod v4 forbids .partial() on schemas with object-level refinements,
+// so the update schema is built from the base object before refining.
+export const BankUpdateValidationSchema = BankBaseSchema.partial().refine(
+  data => noDuplicateLoanTypes.check(data.commissionTable),
+  { message: noDuplicateLoanTypes.message, path: noDuplicateLoanTypes.path }
+);

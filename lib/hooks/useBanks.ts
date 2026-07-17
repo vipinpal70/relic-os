@@ -50,6 +50,15 @@ export interface BankStats {
   };
 }
 
+export interface BankListStats {
+  total: number;
+  active: number;
+  monthLeads: number;
+  monthLoanAmount: number;
+  paidCommission: number;
+  pendingCommission: number;
+}
+
 export function useBanks(params: {
   search?: string;
   status?: string;
@@ -62,7 +71,7 @@ export function useBanks(params: {
 } = {}) {
   const queryClient = useQueryClient();
 
-  const banksQuery = useQuery<{ data: Bank[]; total: number }>({
+  const banksQuery = useQuery<{ data: Bank[]; total: number; stats: BankListStats }>({
     queryKey: ["banks", params],
     queryFn: async () => {
       const queryStr = new URLSearchParams(params as any).toString();
@@ -93,6 +102,7 @@ export function useBanks(params: {
   return {
     data: banksQuery.data?.data || [],
     total: banksQuery.data?.total || 0,
+    stats: banksQuery.data?.stats,
     isLoading: banksQuery.isLoading,
     error: banksQuery.error,
     createBank: createBankMutation.mutateAsync,

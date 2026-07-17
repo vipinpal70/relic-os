@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { verifyPermission } from "@/lib/middlewares/auth.middleware";
-import { BankValidationSchema } from "@/lib/validations/bank.validation";
+import { BankUpdateValidationSchema } from "@/lib/validations/bank.validation";
 import { BankService } from "@/lib/services/bank.service";
 
 const bankService = new BankService();
@@ -45,7 +45,7 @@ export async function PATCH(
     const { user } = authResult;
 
     const body = await request.json();
-    const validationResult = BankValidationSchema.partial().safeParse(body);
+    const validationResult = BankUpdateValidationSchema.safeParse(body);
 
     if (!validationResult.success) {
       return NextResponse.json(

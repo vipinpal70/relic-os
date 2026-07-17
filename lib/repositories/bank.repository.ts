@@ -58,6 +58,8 @@ export class BankRepository {
         { branch: { $regex: search, $options: "i" } },
         { ifsc: { $regex: search, $options: "i" } },
         { managerName: { $regex: search, $options: "i" } },
+        { state: { $regex: search, $options: "i" } },
+        { city: { $regex: search, $options: "i" } },
       ];
     }
 

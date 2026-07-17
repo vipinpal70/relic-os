@@ -1,7 +1,19 @@
 import { z } from "zod";
 import { CommissionRuleValidationSchema } from "./bank.validation";
 
-export const ChannelPartnerValidationSchema = z.object({
+// Validate that there are no duplicate loan types in the commission table
+const noDuplicateLoanTypes = {
+  check: (commissionTable?: Array<{ loanType: string }>) => {
+    if (!commissionTable) return true;
+    const loanTypes = commissionTable.map(r => r.loanType.toLowerCase());
+    const uniqueLoanTypes = new Set(loanTypes);
+    return uniqueLoanTypes.size === loanTypes.length;
+  },
+  message: "Duplicate Loan Types are not allowed in the commission table",
+  path: ["commissionTable"],
+};
+
+const ChannelPartnerBaseSchema = z.object({
   name: z.string().min(2, "Partner Name must be at least 2 characters"),
   companyName: z.string().min(2, "Company Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
@@ -28,11 +40,16 @@ export const ChannelPartnerValidationSchema = z.object({
   notes: z.string().optional().or(z.literal("")),
   profileImage: z.string().optional().or(z.literal("")),
   commissionTable: z.array(CommissionRuleValidationSchema).default([]),
-}).refine(data => {
-  const loanTypes = data.commissionTable.map(r => r.loanType.toLowerCase());
-  const uniqueLoanTypes = new Set(loanTypes);
-  return uniqueLoanTypes.size === loanTypes.length;
-}, {
-  message: "Duplicate Loan Types are not allowed in the commission table",
-  path: ["commissionTable"],
 });
+
+export const ChannelPartnerValidationSchema = ChannelPartnerBaseSchema.refine(
+  data => noDuplicateLoanTypes.check(data.commissionTable),
+  { message: noDuplicateLoanTypes.message, path: noDuplicateLoanTypes.path }
+);
+
+// Zod v4 forbids .partial() on schemas with object-level refinements,
+// so the update schema is built from the base object before refining.
+export const ChannelPartnerUpdateValidationSchema = ChannelPartnerBaseSchema.partial().refine(
+  data => noDuplicateLoanTypes.check(data.commissionTable),
+  { message: noDuplicateLoanTypes.message, path: noDuplicateLoanTypes.path }
+);

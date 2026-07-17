@@ -259,13 +259,14 @@ export default function TeamPage() {
               className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-xl text-sm font-semibold hover:bg-[#1D4ED8] transition-all shadow-sm"
             >
               <Plus size={16} />
-              Add Member
+              <span className="hidden md:block">Add Member</span>
+              <span className="md:hidden">Add</span>
             </button>
           }
         />
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
           {[
             { label: "Total Active Users", value: usersList.filter((u) => u.status === "Active").length, icon: Users, color: "text-blue-600 bg-blue-50 border-blue-100" },
             { label: "Internal Team Members", value: usersList.filter((u) => u.role !== "Channel Partner").length, icon: UserCheck, color: "text-emerald-600 bg-emerald-50 border-emerald-100" },
