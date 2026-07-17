@@ -155,9 +155,6 @@ export function LeadTable({ leads }: LeadTableProps) {
                         <Eye size={15} className="text-[#2563EB]" />
                       </button>
                     </Link>
-                    <button className="p-1.5 hover:bg-[#F3F4F6] rounded-md transition-colors">
-                      <MoreHorizontal size={15} className="text-[#6B7280]" />
-                    </button>
                   </div>
                 </td>
               </motion.tr>

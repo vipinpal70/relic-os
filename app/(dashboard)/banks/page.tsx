@@ -21,7 +21,7 @@ export default function BanksPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   // Fetch banks with filters
-  const { data: banksResponse, total, isLoading, stats, createBank, isCreating } = useBanks({
+  const { data: banksResponse, total, isLoading, stats, createBank, isCreating, updateBank } = useBanks({
     search: searchTerm,
     status: statusFilter,
     page,
@@ -399,15 +399,34 @@ export default function BanksPage() {
                         {formatDate(bank.createdAt)}
                       </td>
                       <td>
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${
-                            bank.status === "Active"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : "bg-gray-100 text-gray-600 border-gray-200"
-                          }`}
-                        >
-                          {bank.status}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                await updateBank({
+                                  id: bank._id,
+                                  data: { status: bank.status === "Active" ? "Inactive" : "Active" }
+                                });
+                              } catch (err: any) {
+                                alert(err.message || "Failed to update status");
+                              }
+                            }}
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-250 ease-in-out focus:outline-none ${
+                              bank.status === "Active" ? "bg-emerald-500" : "bg-gray-300"
+                            }`}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-4.5 w-4.5 transform rounded-full bg-white shadow-sm transition duration-250 ease-in-out ${
+                                bank.status === "Active" ? "translate-x-4" : "translate-x-0"
+                              }`}
+                            />
+                          </button>
+                          <span className={`text-xs font-bold transition-colors ${bank.status === "Active" ? "text-emerald-700" : "text-gray-500"}`}>
+                            {bank.status}
+                          </span>
+                        </div>
                       </td>
                     </tr>
                   ))}

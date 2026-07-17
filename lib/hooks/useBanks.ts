@@ -99,6 +99,24 @@ export function useBanks(params: {
     },
   });
 
+  const updateBankMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Bank> }) => {
+      const res = await fetch(`/api/banks/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to update bank");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["banks"] });
+    },
+  });
+
   return {
     data: banksQuery.data?.data || [],
     total: banksQuery.data?.total || 0,
@@ -107,6 +125,8 @@ export function useBanks(params: {
     error: banksQuery.error,
     createBank: createBankMutation.mutateAsync,
     isCreating: createBankMutation.isPending,
+    updateBank: updateBankMutation.mutateAsync,
+    isUpdating: updateBankMutation.isPending,
   };
 }
 

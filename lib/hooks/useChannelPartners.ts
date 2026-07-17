@@ -94,6 +94,24 @@ export function useChannelPartners(params: {
     },
   });
 
+  const updatePartnerMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<ChannelPartner> }) => {
+      const res = await fetch(`/api/channel-partners/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to update channel partner");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["channelPartners"] });
+    },
+  });
+
   return {
     data: partnersQuery.data?.data || [],
     total: partnersQuery.data?.total || 0,
@@ -102,6 +120,8 @@ export function useChannelPartners(params: {
     error: partnersQuery.error,
     createPartner: createPartnerMutation.mutateAsync,
     isCreating: createPartnerMutation.isPending,
+    updatePartner: updatePartnerMutation.mutateAsync,
+    isUpdating: updatePartnerMutation.isPending,
   };
 }
 
