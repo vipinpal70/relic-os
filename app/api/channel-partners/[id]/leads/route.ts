@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
-import { verifyPermission } from "@/lib/middlewares/auth.middleware";
+import { verifyPermission, getChannelPartnerScope } from "@/lib/middlewares/auth.middleware";
 import { LeadRepository } from "@/lib/repositories/lead.repository";
 
 const leadRepo = new LeadRepository();
@@ -14,6 +14,13 @@ export async function GET(
     await dbConnect();
     const authResult = await verifyPermission();
     if (authResult instanceof NextResponse) return authResult;
+
+    // Staff can view any partner; a Channel Partner user can only access their own record
+    const scope = await getChannelPartnerScope(authResult.user);
+    if (scope instanceof NextResponse) return scope;
+    if (scope && scope !== id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || undefined;
@@ -41,8 +48,19 @@ export async function GET(
 
     // Return raw lead documents: the Cases tab renders model fields
     // (_id, applicantName, partnerExpectedCommission, ...) that formatLead strips.
+    // Bank-side commission (Relic's earnings) is never exposed to partner users.
+    const data = scope
+      ? result.data.map((lead: any) => {
+          const obj = typeof lead.toObject === "function" ? lead.toObject() : { ...lead };
+          delete obj.bankExpectedCommission;
+          delete obj.bankPaidCommission;
+          delete obj.bankPendingCommission;
+          return obj;
+        })
+      : result.data;
+
     return NextResponse.json({
-      data: result.data,
+      data,
       total: result.total,
     });
   } catch (error: any) {

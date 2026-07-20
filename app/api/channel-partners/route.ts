@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
-import { verifyPermission } from "@/lib/middlewares/auth.middleware";
+import { verifyPermission, STAFF_ROLES } from "@/lib/middlewares/auth.middleware";
 import { ChannelPartnerValidationSchema } from "@/lib/validations/channel-partner.validation";
 import { ChannelPartnerService } from "@/lib/services/channel-partner.service";
 import { ChannelPartnerRepository } from "@/lib/repositories/channel-partner.repository";
@@ -13,7 +13,7 @@ const partnerRepo = new ChannelPartnerRepository();
 export async function GET(request: Request) {
   try {
     await dbConnect();
-    const authResult = await verifyPermission();
+    const authResult = await verifyPermission(STAFF_ROLES);
     if (authResult instanceof NextResponse) return authResult;
 
     const { searchParams } = new URL(request.url);

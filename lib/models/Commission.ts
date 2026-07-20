@@ -10,6 +10,10 @@ export interface ICommission extends Document {
   paidCommission: number;
   pendingCommission: number;
   status: "Unpaid" | "Partially Paid" | "Paid";
+  // Set when this commission is included on a generated invoice; unset on
+  // invoice cancellation so the lead returns to the billable pool.
+  invoiceId?: mongoose.Types.ObjectId;
+  invoiceNumber?: string;
   createdBy?: string;
   updatedBy?: string;
   isDeleted: boolean;
@@ -36,6 +40,8 @@ const CommissionSchema = new Schema<ICommission>(
       enum: ["Unpaid", "Partially Paid", "Paid"],
       default: "Unpaid",
     },
+    invoiceId: { type: Schema.Types.ObjectId, ref: "Invoice" },
+    invoiceNumber: { type: String },
     createdBy: { type: String, default: "System" },
     updatedBy: { type: String, default: "System" },
     isDeleted: { type: Boolean, default: false },
@@ -49,6 +55,7 @@ CommissionSchema.index({ entityType: 1, entityId: 1 });
 CommissionSchema.index({ status: 1 });
 CommissionSchema.index({ isDeleted: 1 });
 CommissionSchema.index({ caseId: 1, entityType: 1 }, { unique: true });
+CommissionSchema.index({ entityType: 1, entityId: 1, invoiceId: 1 });
 
 export default mongoose.models.Commission ||
   mongoose.model<ICommission>("Commission", CommissionSchema);

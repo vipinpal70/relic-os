@@ -39,14 +39,6 @@ export const banks = [
   { id: "B005", bank_name: "Kotak Bank", contact_person: "Sudhir Bose", email: "loans@kotak.com", phone: "1860-266-2666", address: "Mumbai, Maharashtra", status: "Active", created_at: "2024-01-01" },
 ];
 
-export const invoices = [
-  { id: "INV001", invoice_number: "RELIC/2024/001", invoice_type: "Channel Partner", partner: "Aryan Finance", invoice_date: "2024-05-31", start_date: "2024-05-01", end_date: "2024-05-31", total_application: 3, total_disbursed: 12150000, total_commission: 243000, status: "Paid", paid_date: "2024-06-15", created_by: "Vikash Sharma" },
-  { id: "INV002", invoice_number: "RELIC/2024/002", invoice_type: "Bank", partner: "HDFC Bank", invoice_date: "2024-05-31", start_date: "2024-05-01", end_date: "2024-05-31", total_application: 5, total_disbursed: 18000000, total_commission: 360000, status: "Sent", paid_date: "", created_by: "Vikash Sharma" },
-  { id: "INV003", invoice_number: "RELIC/2024/003", invoice_type: "Channel Partner", partner: "Bharat Associates", invoice_date: "2024-06-30", start_date: "2024-06-01", end_date: "2024-06-30", total_application: 2, total_disbursed: 5800000, total_commission: 87000, status: "Generated", paid_date: "", created_by: "Priya Nair" },
-  { id: "INV004", invoice_number: "RELIC/2024/004", invoice_type: "Bank", partner: "ICICI Bank", invoice_date: "2024-06-30", start_date: "2024-06-01", end_date: "2024-06-30", total_application: 3, total_disbursed: 7200000, total_commission: 144000, status: "Draft", paid_date: "", created_by: "Priya Nair" },
-  { id: "INV005", invoice_number: "RELIC/2024/005", invoice_type: "Channel Partner", partner: "Sunrise Partners", invoice_date: "2024-04-30", start_date: "2024-04-01", end_date: "2024-04-30", total_application: 4, total_disbursed: 15000000, total_commission: 300000, status: "Paid", paid_date: "2024-05-20", created_by: "Vikash Sharma" },
-];
-
 export const commissionRecords = [
   { id: "CR001", lead_id: "L001", bank: "HDFC Bank", channel_partner: "Aryan Finance", loan_amount: 2450000, bank_commission_rate: 1.5, partner_commission_rate: 1.0, bank_commission: 36750, partner_commission: 24500, status: "Paid", invoice_id: "INV001", created_at: "2024-05-20" },
   { id: "CR002", lead_id: "L007", bank: "SBI", channel_partner: "Aryan Finance", loan_amount: 7200000, bank_commission_rate: 1.5, partner_commission_rate: 1.0, bank_commission: 108000, partner_commission: 72000, status: "Paid", invoice_id: "INV001", created_at: "2024-05-18" },

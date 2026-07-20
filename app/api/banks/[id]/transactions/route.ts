@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
-import { verifyPermission } from "@/lib/middlewares/auth.middleware";
+import { verifyPermission, STAFF_ROLES } from "@/lib/middlewares/auth.middleware";
 import { CommissionService } from "@/lib/services/commission.service";
 import Commission from "@/lib/models/Commission";
 import CommissionPayment from "@/lib/models/CommissionPayment";
@@ -25,7 +25,7 @@ export async function GET(
   const { id } = await params;
   try {
     await dbConnect();
-    const authResult = await verifyPermission();
+    const authResult = await verifyPermission(STAFF_ROLES);
     if (authResult instanceof NextResponse) return authResult;
 
     // 1. Find all Commission records for this Bank

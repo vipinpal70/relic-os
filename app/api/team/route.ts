@@ -5,11 +5,14 @@ import TeamProfile from "@/lib/models/TeamProfile";
 import ChannelPartner from "@/lib/models/ChannelPartner";
 import bcrypt from "bcryptjs";
 import { getSessionUser, canManageTeam } from "@/lib/auth";
+import { verifyPermission, STAFF_ROLES } from "@/lib/middlewares/auth.middleware";
 
 export async function GET() {
   try {
     await dbConnect();
-    
+    const authResult = await verifyPermission(STAFF_ROLES);
+    if (authResult instanceof NextResponse) return authResult;
+
     // Fetch all users
     const users = await User.find({}).select("-password").sort({ createdAt: -1 });
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
-import { verifyPermission } from "@/lib/middlewares/auth.middleware";
+import { verifyPermission, getChannelPartnerScope } from "@/lib/middlewares/auth.middleware";
 import { CommissionService } from "@/lib/services/commission.service";
 import Commission from "@/lib/models/Commission";
 import CommissionPayment from "@/lib/models/CommissionPayment";
@@ -27,6 +27,13 @@ export async function GET(
     await dbConnect();
     const authResult = await verifyPermission();
     if (authResult instanceof NextResponse) return authResult;
+
+    // Staff can view any partner; a Channel Partner user can only access their own record
+    const scope = await getChannelPartnerScope(authResult.user);
+    if (scope instanceof NextResponse) return scope;
+    if (scope && scope !== id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     // 1. Find all Commission records for this Channel Partner
     const commissions = await Commission.find({ entityId: id, entityType: "ChannelPartner", isDeleted: false });

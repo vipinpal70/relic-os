@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
+import { verifyPermission, STAFF_ROLES } from "@/lib/middlewares/auth.middleware";
 import CommissionRate from "@/lib/models/CommissionRate";
 
 export async function GET() {
   try {
     await dbConnect();
+    const authResult = await verifyPermission(STAFF_ROLES);
+    if (authResult instanceof NextResponse) return authResult;
+
     const rates = await CommissionRate.find().sort({ createdAt: -1 });
     return NextResponse.json(rates);
   } catch (error: any) {
@@ -16,6 +20,9 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     await dbConnect();
+    const authResult = await verifyPermission(["Super Admin", "Admin", "Manager"]);
+    if (authResult instanceof NextResponse) return authResult;
+
     const body = await request.json();
     const { type, partner, loan_type, rate, effective_from, status } = body;
 

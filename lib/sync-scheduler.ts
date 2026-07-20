@@ -189,6 +189,12 @@ export async function runBackgroundSyncIfNeeded() {
         application_number = `APP-GS-${phone.replace(/[^0-9]/g, "").slice(-4)}-${i}`;
       }
 
+      // Import-only sync: leads already in the database are never modified.
+      // Checked before bank/partner resolution so skipped rows don't create
+      // placeholder entities either.
+      const existingLead = await Lead.findOne({ applicationNumber: application_number });
+      if (existingLead) continue;
+
       let created_at = new Date();
       if (createdAtIdx !== -1 && row[createdAtIdx]) {
         const parsedDate = new Date(row[createdAtIdx]);
@@ -249,11 +255,13 @@ export async function runBackgroundSyncIfNeeded() {
         }
       }
 
-      // 4. Find or update Lead
+      // 4. Insert the new Lead. Existing leads were skipped above, so the
+      // sheet can only add records, never modify them. $setOnInsert + upsert
+      // keeps this race-safe: a concurrent sync of the same row is a no-op.
       const leadDoc = await Lead.findOneAndUpdate(
         { applicationNumber: application_number },
         {
-          $set: {
+          $setOnInsert: {
             applicantName: applicant_name,
             email,
             phone,
@@ -274,7 +282,6 @@ export async function runBackgroundSyncIfNeeded() {
         { upsert: true, new: true }
       );
 
-      // Create an activity log if this was newly imported
       await ActivityLog.create({
         entityType: "Lead",
         entityId: leadDoc._id,

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
-import { verifyPermission } from "@/lib/middlewares/auth.middleware";
+import { verifyPermission, STAFF_ROLES } from "@/lib/middlewares/auth.middleware";
 import { AnalyticsService } from "@/lib/services/analytics.service";
 
 const analyticsService = new AnalyticsService();
@@ -12,7 +12,7 @@ export async function GET(
   const { id } = await params;
   try {
     await dbConnect();
-    const authResult = await verifyPermission();
+    const authResult = await verifyPermission(STAFF_ROLES);
     if (authResult instanceof NextResponse) return authResult;
 
     const { searchParams } = new URL(request.url);

@@ -8,6 +8,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { LeadFilters } from "@/components/leads/LeadFilters";
 import { LeadTable } from "@/components/leads/LeadTable";
 import { AddLeadModal } from "@/components/leads/AddLeadModal";
+import { useSession } from "@/components/providers/SessionProvider";
+import { PartnerLeadsView } from "@/components/partner/PartnerLeadsView";
 
 interface IntegrationConfig {
   googleSheetUrl: string;
@@ -20,6 +22,21 @@ interface IntegrationConfig {
 }
 
 export default function LeadsPage() {
+  const { user } = useSession();
+
+  // Channel Partner users get a scoped, view-only leads list
+  if (user?.role === "Channel Partner") {
+    return (
+      <AppLayout title="Lead Management">
+        <PartnerLeadsView />
+      </AppLayout>
+    );
+  }
+
+  return <AdminLeadsPage />;
+}
+
+function AdminLeadsPage() {
   const [leadsList, setLeadsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");

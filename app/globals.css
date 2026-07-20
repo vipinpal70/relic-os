@@ -179,3 +179,17 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Invoice printing */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  body {
+    background: #fff;
+  }
+  ::-webkit-scrollbar {
+    display: none;
+  }
+}

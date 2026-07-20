@@ -54,7 +54,45 @@ export const statusColors: Record<string, { bg: string; text: string }> = {
   Team: { bg: "#EEF2FF", text: "#4F46E5" },
   "Channel Partner": { bg: "#FEF3C7", text: "#B45309" },
   "Invoice Generated": { bg: "#EEF2FF", text: "#4F46E5" },
+  Cancelled: { bg: "#FEE2E2", text: "#B91C1C" },
 };
+
+export function numberToWordsINR(amount: number): string {
+  const ones = [
+    "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+    "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
+    "Seventeen", "Eighteen", "Nineteen",
+  ];
+  const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+  const twoDigits = (n: number): string =>
+    n < 20 ? ones[n] : `${tens[Math.floor(n / 10)]}${n % 10 ? " " + ones[n % 10] : ""}`;
+
+  const threeDigits = (n: number): string =>
+    n > 99
+      ? `${ones[Math.floor(n / 100)]} Hundred${n % 100 ? " " + twoDigits(n % 100) : ""}`
+      : twoDigits(n);
+
+  const inWords = (n: number): string => {
+    if (n === 0) return "Zero";
+    const crore = Math.floor(n / 10000000);
+    const lakh = Math.floor((n % 10000000) / 100000);
+    const thousand = Math.floor((n % 100000) / 1000);
+    const rest = n % 1000;
+    const parts: string[] = [];
+    if (crore) parts.push(`${inWords(crore)} Crore`);
+    if (lakh) parts.push(`${twoDigits(lakh)} Lakh`);
+    if (thousand) parts.push(`${twoDigits(thousand)} Thousand`);
+    if (rest) parts.push(threeDigits(rest));
+    return parts.join(" ");
+  };
+
+  const rupees = Math.floor(Math.abs(amount));
+  const paise = Math.round((Math.abs(amount) - rupees) * 100);
+  let words = `${inWords(rupees)} Rupees`;
+  if (paise > 0) words += ` and ${twoDigits(paise)} Paise`;
+  return `${words} Only`;
+}
 
 export function formatLead(c: any): any {
   if (!c) return null;

@@ -260,6 +260,31 @@ export function useChannelPartnerTransactions(id: string) {
   };
 }
 
+/**
+ * The Channel Partner portal's own record — resolves which partner the
+ * logged-in "Channel Partner" user is linked to.
+ */
+export function useMyChannelPartner() {
+  const meQuery = useQuery<ChannelPartner>({
+    queryKey: ["myChannelPartner"],
+    queryFn: async () => {
+      const res = await fetch("/api/channel-partners/me");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to load your partner profile");
+      }
+      return res.json();
+    },
+    retry: false,
+  });
+
+  return {
+    partner: meQuery.data,
+    isLoading: meQuery.isLoading,
+    error: meQuery.error,
+  };
+}
+
 export function useChannelPartnerCommissions(id: string, params: any = {}) {
   return useQuery({
     queryKey: ["partnerCommissions", id, params],

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { formatLead } from "@/lib/utils";
-import { verifyPermission } from "@/lib/middlewares/auth.middleware";
+import { verifyPermission, getChannelPartnerScope } from "@/lib/middlewares/auth.middleware";
 import { LeadValidationSchema } from "@/lib/validations/lead.validation";
 import { LeadRepository } from "@/lib/repositories/lead.repository";
 import { CommissionService } from "@/lib/services/commission.service";
@@ -20,8 +20,16 @@ export async function GET(
     const authResult = await verifyPermission();
     if (authResult instanceof NextResponse) return authResult;
 
+    const scope = await getChannelPartnerScope(authResult.user);
+    if (scope instanceof NextResponse) return scope;
+
     const lead = await leadRepo.findById(id);
     if (!lead) {
+      return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+    }
+    // Channel Partner users can only view their own leads (404, not 403, to avoid leaking existence)
+    const leadPartnerId = ((lead.channelPartnerId as any)?._id ?? lead.channelPartnerId)?.toString();
+    if (scope && leadPartnerId !== scope) {
       return NextResponse.json({ error: "Lead not found" }, { status: 404 });
     }
 

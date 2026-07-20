@@ -38,7 +38,7 @@ export function Header({ title, onMenuClick }: HeaderProps) {
       {/* Page title (mobile only — search takes this spot on desktop) */}
       <h2 className="flex-1 min-w-0 text-base font-bold text-[#111827] truncate md:hidden">{title}</h2>
 
-      <div className="hidden md:block flex-1 max-w-sm lg:ml-4">
+      <div className="hidden md:block flex-1 max-w-sm">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
           <input
@@ -50,19 +50,23 @@ export function Header({ title, onMenuClick }: HeaderProps) {
       </div>
 
       <div className="ml-auto flex items-center gap-3">
-        <button className="relative p-2 rounded-lg hover:bg-[#F7F8FA] transition-colors">
+        {/* <button className="relative p-2 rounded-lg hover:bg-[#F7F8FA] transition-colors">
           <Bell className="w-5 h-5 text-[#475569]" />
           {unread > 0 && (
             <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
               {unread}
             </span>
           )}
-        </button>
+        </button> */}
         <div
           title={`${user?.name} (${user?.role})`}
           className="w-8 h-8 rounded-full gradient-blue flex items-center justify-center text-white text-xs font-bold cursor-pointer"
         >
           {initials}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-[#111827] truncate">{user?.name || "User"}</p>
+          <p className="text-xs text-[#9CA3AF] truncate">{user?.role || "Team"}</p>
         </div>
       </div>
     </header>

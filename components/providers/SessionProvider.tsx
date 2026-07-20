@@ -6,7 +6,7 @@ export interface SessionUser {
   _id: string;
   name: string;
   email: string;
-  role: "Admin" | "Team" | "Channel Partner";
+  role: "Super Admin" | "Admin" | "Manager" | "Employee" | "Team" | "Channel Partner";
   phone?: string;
   status: "Active" | "Inactive";
   tag?: string;

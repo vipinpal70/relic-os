@@ -14,8 +14,25 @@ import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
+import { useSession } from "@/components/providers/SessionProvider";
+import { PartnerDashboard } from "@/components/partner/PartnerDashboard";
 
 export default function DashboardPage() {
+  const { user } = useSession();
+
+  // Channel Partner users get their scoped portal dashboard
+  if (user?.role === "Channel Partner") {
+    return (
+      <AppLayout title="Dashboard">
+        <PartnerDashboard />
+      </AppLayout>
+    );
+  }
+
+  return <AdminDashboard />;
+}
+
+function AdminDashboard() {
   const [leadsList, setLeadsList] = useState<any[]>([]);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [loading, setLoading] = useState(true);

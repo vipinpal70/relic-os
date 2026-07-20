@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
+import { verifyPermission, STAFF_ROLES } from "@/lib/middlewares/auth.middleware";
 import Lead from "@/lib/models/Lead";
 import Bank from "@/lib/models/Bank";
 import ActivityLog from "@/lib/models/ActivityLog";
@@ -7,6 +8,9 @@ import ActivityLog from "@/lib/models/ActivityLog";
 export async function GET() {
   try {
     await dbConnect();
+    // Global stats are staff-only; channel partners use their scoped endpoints
+    const authResult = await verifyPermission(STAFF_ROLES);
+    if (authResult instanceof NextResponse) return authResult;
 
     // 1. Core Counts
     const totalApplications = await Lead.countDocuments({ isDeleted: false });

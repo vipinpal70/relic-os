@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
-import { verifyPermission } from "@/lib/middlewares/auth.middleware";
+import { verifyPermission, getChannelPartnerScope } from "@/lib/middlewares/auth.middleware";
 import { CommissionRepository } from "@/lib/repositories/commission.repository";
 
 const commissionRepo = new CommissionRepository();
@@ -14,6 +14,13 @@ export async function GET(
     await dbConnect();
     const authResult = await verifyPermission();
     if (authResult instanceof NextResponse) return authResult;
+
+    // Staff can view any partner; a Channel Partner user can only access their own record
+    const scope = await getChannelPartnerScope(authResult.user);
+    if (scope instanceof NextResponse) return scope;
+    if (scope && scope !== id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") || undefined;

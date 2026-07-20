@@ -15,7 +15,8 @@ export class LeadRepository {
   async findOne(filter: any): Promise<ILead | null> {
     return await Lead.findOne({ ...filter, isDeleted: false })
       .populate("bankId", "bankName branch")
-      .populate("channelPartnerId", "name companyName");
+      .populate("channelPartnerId", "name companyName")
+      .populate("assignedUserId", "name email");
   }
 
   async update(id: string, data: any): Promise<ILead | null> {
@@ -91,6 +92,7 @@ export class LeadRepository {
       Lead.find(filter)
         .populate("bankId", "bankName branch")
         .populate("channelPartnerId", "name companyName")
+        .populate("assignedUserId", "name email")
         .sort(sort)
         .skip(skip)
         .limit(limit),
@@ -109,6 +111,7 @@ export class LeadRepository {
     return await Lead.find({ ...filter, isDeleted: false })
       .populate("bankId", "bankName branch")
       .populate("channelPartnerId", "name companyName")
+      .populate("assignedUserId", "name email")
       .sort({ createdAt: -1 });
   }
 }

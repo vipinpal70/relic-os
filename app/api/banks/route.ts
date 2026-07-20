@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
-import { verifyPermission } from "@/lib/middlewares/auth.middleware";
+import { verifyPermission, STAFF_ROLES } from "@/lib/middlewares/auth.middleware";
 import { BankValidationSchema } from "@/lib/validations/bank.validation";
 import { BankService } from "@/lib/services/bank.service";
 import { BankRepository } from "@/lib/repositories/bank.repository";
@@ -13,7 +13,7 @@ const bankRepo = new BankRepository();
 export async function GET(request: Request) {
   try {
     await dbConnect();
-    const authResult = await verifyPermission();
+    const authResult = await verifyPermission(STAFF_ROLES);
     if (authResult instanceof NextResponse) return authResult;
 
     const { searchParams } = new URL(request.url);

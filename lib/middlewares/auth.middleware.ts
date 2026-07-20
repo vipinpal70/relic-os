@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
+import ChannelPartner from "@/lib/models/ChannelPartner";
 
 export interface AuthenticatedUser {
   id: string;
@@ -8,6 +9,9 @@ export interface AuthenticatedUser {
   role: "Super Admin" | "Admin" | "Manager" | "Employee" | "Team" | "Channel Partner";
   status: "Active" | "Inactive";
 }
+
+// Internal staff roles — everything except "Channel Partner".
+export const STAFF_ROLES = ["Super Admin", "Admin", "Manager", "Employee", "Team"];
 
 /**
  * Validates session and checks if the logged-in user possesses one of the allowed roles.
@@ -48,4 +52,28 @@ export async function verifyPermission(
   }
 
   return { user };
+}
+
+/**
+ * Resolves the data scope for the logged-in user.
+ * Staff roles are unscoped (returns null). A "Channel Partner" user is scoped
+ * to their own ChannelPartner record (linked via ChannelPartner.userId when
+ * the admin creates their credentials) — returns its id as a string, or a
+ * 403 response if no partner record is linked.
+ */
+export async function getChannelPartnerScope(
+  user: AuthenticatedUser
+): Promise<string | null | NextResponse> {
+  if (user.role !== "Channel Partner") return null;
+
+  // The session user is a serialized Mongoose doc, so the id lives on _id.
+  const userId = (user as any)._id || user.id;
+  const partner = await ChannelPartner.findOne({ userId, isDeleted: false }).select("_id");
+  if (!partner) {
+    return NextResponse.json(
+      { error: "No channel partner profile is linked to this account. Contact your administrator." },
+      { status: 403 }
+    );
+  }
+  return partner._id.toString();
 }

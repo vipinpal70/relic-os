@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { formatLead } from "@/lib/utils";
-import { verifyPermission } from "@/lib/middlewares/auth.middleware";
+import { verifyPermission, getChannelPartnerScope } from "@/lib/middlewares/auth.middleware";
 import { LeadValidationSchema } from "@/lib/validations/lead.validation";
 import { LeadRepository } from "@/lib/repositories/lead.repository";
 import { CommissionService } from "@/lib/services/commission.service";
@@ -17,11 +17,15 @@ export async function GET(request: Request) {
     const authResult = await verifyPermission();
     if (authResult instanceof NextResponse) return authResult;
 
+    // Channel Partner users only ever see their own leads, regardless of query params
+    const scope = await getChannelPartnerScope(authResult.user);
+    if (scope instanceof NextResponse) return scope;
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || undefined;
     const status = searchParams.get("status") || undefined;
     const bankId = searchParams.get("bankId") || undefined;
-    const channelPartnerId = searchParams.get("channelPartnerId") || undefined;
+    const channelPartnerId = scope || searchParams.get("channelPartnerId") || undefined;
     const loanType = searchParams.get("loanType") || undefined;
     const startDate = searchParams.get("startDate") || undefined;
     const endDate = searchParams.get("endDate") || undefined;

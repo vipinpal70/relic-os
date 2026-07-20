@@ -162,6 +162,12 @@ export async function POST() {
         application_number = `APP-GS-${phone.replace(/[^0-9]/g, "").slice(-4)}-${i}`;
       }
 
+      // Import-only sync: leads already in the database are never modified.
+      // Checked before bank/partner resolution so skipped rows don't create
+      // placeholder entities either.
+      const existingLead = await Lead.findOne({ applicationNumber: application_number });
+      if (existingLead) continue;
+
       let created_at = new Date();
       if (createdAtIdx !== -1 && row[createdAtIdx]) {
         const parsedDate = new Date(row[createdAtIdx]);
@@ -222,14 +228,13 @@ export async function POST() {
         }
       }
 
-      // 4. Find or create Lead — preserve existing status on re-sync
-      const existingLead = await Lead.findOne({ applicationNumber: application_number });
-      const isNew = !existingLead;
-
+      // 4. Insert the new Lead. Existing leads were skipped above, so the
+      // sheet can only add records, never modify them. $setOnInsert + upsert
+      // keeps this race-safe: a concurrent sync of the same row is a no-op.
       const leadDoc = await Lead.findOneAndUpdate(
         { applicationNumber: application_number },
         {
-          $set: {
+          $setOnInsert: {
             applicantName: applicant_name,
             email,
             phone,
@@ -238,31 +243,25 @@ export async function POST() {
             bankId,
             channelPartnerId,
             assignedUserId,
+            status,
             disbursedAmount: disbursed_amount,
             approvedDate: approved_date,
             disbursedDate: disbursed_date,
             remarks,
-            isDeleted: false,
-          },
-          // Only set status and createdAt when inserting a brand-new record
-          $setOnInsert: {
-            status,
             createdAt: created_at,
+            isDeleted: false,
           },
         },
         { upsert: true, new: true }
       );
 
-      // Only log an activity entry when a new record is created (not on re-sync updates)
-      if (isNew) {
-        await ActivityLog.create({
-          entityType: "Lead",
-          entityId: leadDoc._id,
-          action: "Google Sheet Import",
-          details: `Imported applicant details for ${applicant_name} via Sync.`,
-          performedBy: "Google Sheets Sync",
-        });
-      }
+      await ActivityLog.create({
+        entityType: "Lead",
+        entityId: leadDoc._id,
+        action: "Google Sheet Import",
+        details: `Imported applicant details for ${applicant_name} via Sync.`,
+        performedBy: "Google Sheets Sync",
+      });
 
       importedCount++;
     }

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, FolderOpen, TrendingUp, FileText,
-  UserCog, User, Settings, Activity, Bell, Shield, LogOut, Landmark, X
+  UserCog, User, Settings, Activity, Bell, Shield, LogOut, Landmark, X, Briefcase
 } from "lucide-react";
 import { useSession } from "@/components/providers/SessionProvider";
 import { logout } from "@/app/actions/auth";
@@ -18,7 +18,15 @@ const navItems = [
   { label: "Team Management", href: "/team", icon: UserCog },
   { label: "Profile", href: "/profile", icon: User },
   { label: "Settings", href: "/settings", icon: Settings },
-  { label: "Notifications", href: "/notifications", icon: Bell },
+  // { label: "Notifications", href: "/notifications", icon: Bell },
+];
+
+// Channel Partner portal: restricted nav
+const partnerNavItems = [
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Lead Management", href: "/leads", icon: Users },
+  { label: "My Company", href: "/my-company", icon: Briefcase },
+  { label: "Profile", href: "/profile", icon: User },
 ];
 
 interface SidebarProps {
@@ -29,6 +37,8 @@ interface SidebarProps {
 export function Sidebar({ open = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useSession();
+  const isPartner = user?.role === "Channel Partner";
+  const items = isPartner ? partnerNavItems : navItems;
 
   const initials = user?.name
     ? user.name
@@ -61,8 +71,8 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             <Shield className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1">
-            <span className="text-base font-bold text-[#111827]">Relic OS</span>
-            <p className="text-xs text-[#9CA3AF]">Loan Management</p>
+            <span className="text-base font-bold text-[#111827]">{isPartner ? "Relic Pro" : "Relic OS"}</span>
+            <p className="text-xs text-[#9CA3AF]">{isPartner ? "Partner Portal" : "Loan Management"}</p>
           </div>
           <button
             onClick={onClose}
@@ -75,7 +85,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
-          {navItems.map((item) => {
+          {items.map((item) => {
             const active = pathname === item.href || pathname.startsWith(item.href + "/");
             const Icon = item.icon;
             return (
@@ -99,14 +109,15 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#F7F8FA] transition-colors cursor-pointer group"
             title="Click to logout"
           >
-            <div className="w-10 h-10 rounded-full gradient-blue flex items-center justify-center text-white text-xs font-bold">
+            <span className="text-red-500 group-hover:text-red-700 transition-colors">Logout</span>
+            {/* <div className="w-10 h-10 rounded-full gradient-blue flex items-center justify-center text-white text-xs font-bold">
               {initials}
-            </div>
-            <div className="flex-1 min-w-0">
+            </div> */}
+            {/* <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-[#111827] truncate group-hover:text-red-600 transition-colors">{user?.name || "User"}</p>
               <p className="text-xs text-[#9CA3AF] truncate">{user?.role || "Team"}</p>
-            </div>
-            <LogOut className="w-4 h-4 text-[#9CA3AF] group-hover:text-red-500 transition-colors" />
+            </div> */}
+            <LogOut className="w-4 h-4 text-red-500 group-hover:text-red-700 transition-colors" />
           </div>
         </div>
       </aside>
