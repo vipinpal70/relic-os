@@ -23,7 +23,7 @@ export function RegisterForm() {
             <Shield className="w-5.5 h-5.5 text-white" />
           </div>
           <div>
-            <span className="text-lg font-bold tracking-tight">Relic OS</span>
+            <span className="text-lg font-bold tracking-tight">Relic One</span>
             <p className="text-[10px] text-indigo-200 tracking-wider uppercase font-semibold">Loan Management</p>
           </div>
         </div>

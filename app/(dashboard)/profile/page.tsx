@@ -183,9 +183,6 @@ export default function ProfilePage() {
               <div className="w-24 h-24 rounded-2xl gradient-blue flex items-center justify-center text-white text-3xl font-bold">
                 {initials}
               </div>
-              <button className="absolute -bottom-2 -right-2 w-8 h-8 bg-white border border-[#E5E7EB] rounded-full flex items-center justify-center hover:bg-[#F7F8FA] transition-colors shadow-sm">
-                <Camera size={14} className="text-[#6B7280]" />
-              </button>
             </div>
             <h2 className="text-lg font-bold text-[#111827]">{user?.name || "User"}</h2>
             <p className="text-sm text-[#6B7280] mb-3">{user?.email || "No email provided"}</p>

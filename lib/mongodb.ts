@@ -1,19 +1,39 @@
 import mongoose from "mongoose";
 import dns from "dns";
+import os from "os";
 
-// Fix Node.js DNS resolution issues on Windows when loopback is configured as primary DNS
-if (typeof dns !== "undefined" && typeof dns.getServers === "function") {
+function configureDNS() {
+  if (typeof dns === "undefined" || typeof dns.getServers !== "function" || typeof dns.setServers !== "function") {
+    return;
+  }
   try {
-    const currentServers = dns.getServers();
-    if (currentServers.includes("127.0.0.1") || currentServers.includes("::1")) {
-      if (typeof dns.setServers === "function") {
-        dns.setServers(["8.8.8.8", "1.1.1.1", "192.168.68.1"]);
+    const current = dns.getServers();
+    const candidates: string[] = [];
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+      for (const net of interfaces[name] || []) {
+        if (net.family === "IPv4" && !net.internal) {
+          const parts = net.address.split(".");
+          parts[3] = "1";
+          const gw = parts.join(".");
+          if (!candidates.includes(gw)) {
+            candidates.push(gw);
+          }
+        }
       }
     }
+    const validCurrent = current.filter((s) => s !== "127.0.0.1" && s !== "::1");
+    const fallbackPublic = ["8.8.8.8", "1.1.1.1"];
+    const dnsList = Array.from(new Set([...candidates, ...validCurrent, ...fallbackPublic]));
+    dns.setServers(dnsList);
+    console.log("[dbConnect] Configured DNS servers:", dnsList);
   } catch (err: any) {
-    console.warn("[dns] Failed to configure local loopback DNS fix:", err.message);
+    console.warn("[dbConnect] Failed to set DNS servers:", err.message);
   }
 }
+
+// Configure DNS at file initialization
+configureDNS();
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -48,17 +68,7 @@ export async function dbConnect() {
       bufferCommands: false,
     };
 
-    if (typeof dns !== "undefined" && typeof dns.getServers === "function") {
-      console.log("[dbConnect] Current DNS servers configured in Node:", dns.getServers());
-      if (typeof dns.setServers === "function") {
-        try {
-          dns.setServers(["8.8.8.8", "1.1.1.1"]);
-          console.log("[dbConnect] Set DNS servers to [8.8.8.8, 1.1.1.1]");
-        } catch (err: any) {
-          console.error("[dbConnect] Failed to set DNS servers:", err.message);
-        }
-      }
-    }
+    configureDNS();
 
     cached.promise = mongoose.connect(MONGODB_URI!, opts).then((m) => {
       return m;
@@ -74,3 +84,4 @@ export async function dbConnect() {
 
   return cached.conn;
 }
+

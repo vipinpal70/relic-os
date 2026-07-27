@@ -47,6 +47,16 @@ function ControlledToggle({ value, onChange }: { value: boolean; onChange: (val:
 export default function SettingsPage() {
   const [tab, setTab] = useState("general");
 
+  // General settings state
+  const [systemName, setSystemName] = useState("Relic OS");
+  const [organizationName, setOrganizationName] = useState("Elevana Consultancy");
+  const [timezone, setTimezone] = useState("Asia/Kolkata (IST)");
+  const [dateFormat, setDateFormat] = useState("DD/MM/YYYY");
+  const [currency, setCurrency] = useState("INR (₹)");
+  const [loadingGeneral, setLoadingGeneral] = useState(true);
+  const [savingGeneral, setSavingGeneral] = useState(false);
+  const [generalSuccess, setGeneralSuccess] = useState(false);
+
   // Google Sheets integration state
   const [googleSheetUrl, setGoogleSheetUrl] = useState("");
   const [syncInterval, setSyncInterval] = useState("every_2_hours");
@@ -62,8 +72,64 @@ export default function SettingsPage() {
   const [savingConfig, setSavingConfig] = useState(false);
   const [syncingSheets, setSyncingSheets] = useState(false);
 
+  // Fetch General Settings
+  const fetchGeneralSettings = async () => {
+    try {
+      const res = await fetch("/api/settings/general");
+      if (res.ok) {
+        const data = await res.json();
+        setSystemName(data.systemName || "Relic OS");
+        setOrganizationName(data.organizationName || "Elevana Consultancy");
+        setTimezone(data.timezone || "Asia/Kolkata (IST)");
+        setDateFormat(data.dateFormat || "DD/MM/YYYY");
+        setCurrency(data.currency || "INR (₹)");
+      }
+    } catch (error) {
+      console.error("Failed to load general settings:", error);
+    } finally {
+      setLoadingGeneral(false);
+    }
+  };
+
+  // Save General Settings
+  const handleSaveGeneralSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingGeneral(true);
+    setGeneralSuccess(false);
+    try {
+      const res = await fetch("/api/settings/general", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemName,
+          organizationName,
+          timezone,
+          dateFormat,
+          currency,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSystemName(data.systemName);
+        setOrganizationName(data.organizationName);
+        setTimezone(data.timezone);
+        setDateFormat(data.dateFormat);
+        setCurrency(data.currency);
+        setGeneralSuccess(true);
+        setTimeout(() => setGeneralSuccess(false), 4000);
+      } else {
+        alert("Failed to save general settings.");
+      }
+    } catch (error) {
+      console.error("Error saving general settings:", error);
+      alert("An unexpected error occurred while saving.");
+    } finally {
+      setSavingGeneral(false);
+    }
+  };
+
   // Fetch integration settings
-  const fetchSettings = async () => {
+  const fetchIntegrationSettings = async () => {
     try {
       const res = await fetch("/api/integrations/google-sheets");
       if (res.ok) {
@@ -84,7 +150,8 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
-    fetchSettings();
+    fetchGeneralSettings();
+    fetchIntegrationSettings();
   }, []);
 
   const handleSaveIntegration = async () => {
@@ -101,7 +168,6 @@ export default function SettingsPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        // Update local stats from returned saved doc
         setGoogleSheetUrl(data.googleSheetUrl || "");
         setSyncInterval(data.syncInterval || "every_2_hours");
         setIsActive(data.isActive || false);
@@ -127,10 +193,10 @@ export default function SettingsPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         alert(`Sync complete! Successfully synced/updated ${data.count} leads.`);
-        await fetchSettings();
+        await fetchIntegrationSettings();
       } else {
         alert(data.error || "Sync failed. Make sure spreadsheet share settings allow read access.");
-        await fetchSettings();
+        await fetchIntegrationSettings();
       }
     } catch (err) {
       console.error(err);
@@ -166,26 +232,86 @@ export default function SettingsPage() {
             {tab === "general" && (
               <div className="card p-6">
                 <h3 className="text-base font-semibold text-[#111827] mb-5">General Settings</h3>
-                <div className="space-y-4">
-                  {[
-                    { label: "System Name", value: "Relic OS" },
-                    { label: "Organization Name", value: "Elevana Consultancy" },
-                    { label: "Timezone", value: "Asia/Kolkata (IST)" },
-                    { label: "Date Format", value: "DD/MM/YYYY" },
-                    { label: "Currency", value: "INR (₹)" },
-                  ].map(({ label, value }) => (
-                    <div key={label} className="grid grid-cols-1 sm:grid-cols-[200px_1fr] items-center gap-2 sm:gap-0">
-                      <label className="text-sm font-medium text-[#374151]">{label}</label>
+
+                {loadingGeneral ? (
+                  <div className="flex flex-col items-center justify-center py-10 gap-2">
+                    <Loader2 className="w-6 h-6 text-[#2563EB] animate-spin" />
+                    <p className="text-xs text-[#474569] font-medium">Loading general settings...</p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSaveGeneralSettings} className="space-y-4">
+                    {generalSuccess && (
+                      <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs font-medium flex items-center gap-2">
+                        <CheckCircle2 size={15} className="text-emerald-600" />
+                        <span>General settings saved successfully!</span>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] items-center gap-2 sm:gap-0">
+                      <label className="text-sm font-medium text-[#374151]">System Name</label>
                       <input
-                        defaultValue={value}
+                        type="text"
+                        value={systemName}
+                        onChange={(e) => setSystemName(e.target.value)}
                         className="px-3 py-2 border border-[#D1D5DB] rounded-lg text-sm focus:outline-none focus:border-[#3B82F6] focus:ring-2 focus:ring-blue-100 transition-all max-w-xs bg-white text-[#111827]"
+                        required
                       />
                     </div>
-                  ))}
-                </div>
-                <button className="mt-6 px-4 py-2 bg-[#2563EB] text-white rounded-lg text-sm font-medium hover:bg-[#1D4ED8] transition-colors">
-                  Save Changes
-                </button>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] items-center gap-2 sm:gap-0">
+                      <label className="text-sm font-medium text-[#374151]">Organization Name</label>
+                      <input
+                        type="text"
+                        value={organizationName}
+                        onChange={(e) => setOrganizationName(e.target.value)}
+                        className="px-3 py-2 border border-[#D1D5DB] rounded-lg text-sm focus:outline-none focus:border-[#3B82F6] focus:ring-2 focus:ring-blue-100 transition-all max-w-xs bg-white text-[#111827]"
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] items-center gap-2 sm:gap-0">
+                      <label className="text-sm font-medium text-[#374151]">Timezone</label>
+                      <input
+                        type="text"
+                        value={timezone}
+                        onChange={(e) => setTimezone(e.target.value)}
+                        className="px-3 py-2 border border-[#D1D5DB] rounded-lg text-sm focus:outline-none focus:border-[#3B82F6] focus:ring-2 focus:ring-blue-100 transition-all max-w-xs bg-white text-[#111827]"
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] items-center gap-2 sm:gap-0">
+                      <label className="text-sm font-medium text-[#374151]">Date Format</label>
+                      <input
+                        type="text"
+                        value={dateFormat}
+                        onChange={(e) => setDateFormat(e.target.value)}
+                        className="px-3 py-2 border border-[#D1D5DB] rounded-lg text-sm focus:outline-none focus:border-[#3B82F6] focus:ring-2 focus:ring-blue-100 transition-all max-w-xs bg-white text-[#111827]"
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] items-center gap-2 sm:gap-0">
+                      <label className="text-sm font-medium text-[#374151]">Currency</label>
+                      <input
+                        type="text"
+                        value={currency}
+                        onChange={(e) => setCurrency(e.target.value)}
+                        className="px-3 py-2 border border-[#D1D5DB] rounded-lg text-sm focus:outline-none focus:border-[#3B82F6] focus:ring-2 focus:ring-blue-100 transition-all max-w-xs bg-white text-[#111827]"
+                        required
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={savingGeneral}
+                      className="mt-6 px-4 py-2 bg-[#2563EB] text-white rounded-lg text-sm font-medium hover:bg-[#1D4ED8] transition-colors disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {savingGeneral && <Loader2 size={14} className="animate-spin" />}
+                      Save Changes
+                    </button>
+                  </form>
+                )}
               </div>
             )}
 
@@ -365,14 +491,10 @@ export default function SettingsPage() {
                         </button>
                       </div>
                     </div>
-
-
                   </div>
                 )}
               </div>
             )}
-
-
           </div>
         </div>
       </motion.div>

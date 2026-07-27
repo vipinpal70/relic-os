@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import Integration from "@/lib/models/Integration";
 import Lead from "@/lib/models/Lead";
+import AdLead from "@/lib/models/AdLead";
 import Bank from "@/lib/models/Bank";
 import ChannelPartner from "@/lib/models/ChannelPartner";
 import User from "@/lib/models/User";
@@ -162,11 +163,10 @@ export async function POST() {
         application_number = `APP-GS-${phone.replace(/[^0-9]/g, "").slice(-4)}-${i}`;
       }
 
-      // Import-only sync: leads already in the database are never modified.
-      // Checked before bank/partner resolution so skipped rows don't create
-      // placeholder entities either.
-      const existingLead = await Lead.findOne({ applicationNumber: application_number });
-      if (existingLead) continue;
+      // Import-only sync into AdLead collection:
+      // Skip if already present in AdLead collection
+      const existingAdLead = await AdLead.findOne({ applicationNumber: application_number });
+      if (existingAdLead) continue;
 
       let created_at = new Date();
       if (createdAtIdx !== -1 && row[createdAtIdx]) {
@@ -228,10 +228,8 @@ export async function POST() {
         }
       }
 
-      // 4. Insert the new Lead. Existing leads were skipped above, so the
-      // sheet can only add records, never modify them. $setOnInsert + upsert
-      // keeps this race-safe: a concurrent sync of the same row is a no-op.
-      const leadDoc = await Lead.findOneAndUpdate(
+      // 4. Insert into AdLead collection
+      const adLeadDoc = await AdLead.findOneAndUpdate(
         { applicationNumber: application_number },
         {
           $setOnInsert: {
@@ -256,10 +254,10 @@ export async function POST() {
       );
 
       await ActivityLog.create({
-        entityType: "Lead",
-        entityId: leadDoc._id,
+        entityType: "AdLead",
+        entityId: adLeadDoc._id,
         action: "Google Sheet Import",
-        details: `Imported applicant details for ${applicant_name} via Sync.`,
+        details: `Imported applicant details for ${applicant_name} to Ad Leads via Sync.`,
         performedBy: "Google Sheets Sync",
       });
 

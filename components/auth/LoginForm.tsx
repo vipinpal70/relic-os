@@ -157,14 +157,6 @@ export function LoginForm() {
               )}
             </button>
           </form>
-
-          {/* Footer toggle */}
-          <p className="text-center text-sm text-[#6B7280]">
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="font-semibold text-[#2563EB] hover:underline hover:text-[#1D4ED8] transition-colors">
-              Create free account
-            </Link>
-          </p>
         </div>
       </div>
     </div>
