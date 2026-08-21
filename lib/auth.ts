@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { dbConnect } from "./mongodb";
 import User from "./models/User";
 import Session from "./models/Session";
@@ -17,6 +17,29 @@ export const SESSION_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
 export function canManageTeam(user: { role?: string; tag?: string } | null | undefined): boolean {
   if (!user) return false;
   return user.role === "Admin" || (user.tag || "").trim().toLowerCase() === "admin";
+}
+
+/**
+ * Resolves whether a cross-domain redirect is needed based on user role and request hostname.
+ * - Channel Partners are routed to pro.relicwealth.in
+ * - Admins and Team members are routed to one.relicwealth.in
+ * Returns full redirect URL if a cross-domain jump is needed, or null if already on the correct host / local dev.
+ */
+export function getRoleDomainRedirectUrl(role: string, currentHost?: string): string | null {
+  if (!currentHost) return null;
+  const host = currentHost.toLowerCase().split(":")[0]; // strip port if any
+
+  if (host.includes("relicwealth.in")) {
+    const isPartner = role === "Channel Partner";
+    if (isPartner && !host.startsWith("pro.")) {
+      return "https://pro.relicwealth.in/dashboard";
+    }
+    if (!isPartner && !host.startsWith("one.")) {
+      return "https://one.relicwealth.in/dashboard";
+    }
+  }
+
+  return null;
 }
 
 export interface TokenPayload {
@@ -53,12 +76,19 @@ export function verifyRefreshToken(token: string): { userId: string; sessionId: 
 
 export async function setAuthCookies(accessToken: string, refreshToken: string) {
   const cookieStore = await cookies();
-  
+  const reqHeaders = await headers();
+  const host = (reqHeaders.get("host") || "").toLowerCase().split(":")[0];
+
+  const isProductionDomain = host.includes("relicwealth.in");
+  const domain = isProductionDomain ? ".relicwealth.in" : undefined;
+  const sameSite = isProductionDomain ? "lax" : "strict";
+
   // Set Access Token (15 mins)
   cookieStore.set("accessToken", accessToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production" || isProductionDomain,
+    sameSite,
+    domain,
     maxAge: 15 * 60, // 15 mins in seconds
     path: "/",
   });
@@ -66,8 +96,9 @@ export async function setAuthCookies(accessToken: string, refreshToken: string) 
   // Set Refresh Token (7 days)
   cookieStore.set("refreshToken", refreshToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production" || isProductionDomain,
+    sameSite,
+    domain,
     maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
     path: "/",
   });
@@ -75,9 +106,13 @@ export async function setAuthCookies(accessToken: string, refreshToken: string) 
 
 export async function clearAuthCookies() {
   const cookieStore = await cookies();
+  const reqHeaders = await headers();
+  const host = (reqHeaders.get("host") || "").toLowerCase().split(":")[0];
+  const domain = host.includes("relicwealth.in") ? ".relicwealth.in" : undefined;
+
   try {
-    cookieStore.delete("accessToken");
-    cookieStore.delete("refreshToken");
+    cookieStore.delete({ name: "accessToken", path: "/", domain });
+    cookieStore.delete({ name: "refreshToken", path: "/", domain });
   } catch (e) {
     // cookies() can be read-only in some contexts
   }

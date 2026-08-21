@@ -14,6 +14,7 @@ import {
   clearAuthCookies,
   SESSION_EXPIRY_MS,
   TokenPayload,
+  getRoleDomainRedirectUrl,
 } from "@/lib/auth";
 
 // Automatically seed mock users if DB is empty so that the application works out of the box
@@ -34,6 +35,7 @@ async function seedUsersIfNeeded() {
 }
 
 export async function login(prevState: any, formData: FormData) {
+  let redirectTarget = "/dashboard";
   try {
     await dbConnect();
     await seedUsersIfNeeded();
@@ -61,8 +63,10 @@ export async function login(prevState: any, formData: FormData) {
 
     // Get client info
     const headersList = await import("next/headers");
-    const userAgent = (await headersList.headers()).get("user-agent") || "unknown";
-    const ipAddress = (await headersList.headers()).get("x-forwarded-for") || "unknown";
+    const reqHeaders = await headersList.headers();
+    const userAgent = reqHeaders.get("user-agent") || "unknown";
+    const ipAddress = reqHeaders.get("x-forwarded-for") || "unknown";
+    const host = reqHeaders.get("host") || "";
 
     // Create session in DB
     const expiresAt = new Date(Date.now() + SESSION_EXPIRY_MS);
@@ -97,13 +101,16 @@ export async function login(prevState: any, formData: FormData) {
     // Set HTTP-only cookies
     await setAuthCookies(accessToken, refreshToken);
 
+    // Calculate domain-based redirect target
+    redirectTarget = getRoleDomainRedirectUrl(user.role, host) || "/dashboard";
+
   } catch (error: any) {
     console.error("Login action error:", error);
     return { error: error.message || "An unexpected error occurred during login." };
   }
 
-  // Redirect to dashboard on success
-  redirect("/dashboard");
+  // Redirect to target URL on success
+  redirect(redirectTarget);
 }
 
 export async function register(prevState: any, formData: FormData) {

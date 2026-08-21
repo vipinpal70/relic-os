@@ -20,15 +20,6 @@ export function LoginForm() {
 
         {/* Top Logo */}
         <Image src={logo} alt="Logo" className="relative z-10" width={200} height={200} />
-        {/* <div className="flex items-center gap-3 relative z-10">
-          <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center">
-            <Shield className="w-5.5 h-5.5 text-white" />
-          </div>
-          <div>
-            <span className="text-lg font-bold tracking-tight">Relic Wealth Solutions</span>
-            <p className="text-[10px] text-blue-200 tracking-wider uppercase font-semibold">Loan Management</p>
-          </div>
-        </div> */}
 
         {/* Center Pitch */}
         <div className="my-auto max-w-lg space-y-6 relative z-10">
