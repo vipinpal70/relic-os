@@ -272,7 +272,7 @@ export default function TeamPage() {
             { label: "Internal Team Members", value: usersList.filter((u) => u.role !== "Channel Partner").length, icon: UserCheck, color: "text-emerald-600 bg-emerald-50 border-emerald-100" },
             { label: "Connected Channel Partners", value: usersList.filter((u) => u.role === "Channel Partner").length, icon: Briefcase, color: "text-amber-600 bg-amber-50 border-amber-100" },
           ].map((s, i) => (
-            <div key={i} className={`p-5 rounded-2xl border bg-white shadow-sm flex items-center justify-between`}>
+            <div key={i} className={`p-5 rounded-2xl bg-white shadow-sm flex items-center justify-between`}>
               <div>
                 <p className="text-sm font-medium text-[#6B7280]">{s.label}</p>
                 <h3 className="text-3xl font-extrabold text-[#111827] mt-1">{loading ? "..." : s.value}</h3>

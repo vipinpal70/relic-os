@@ -1,16 +1,15 @@
 "use client";
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useChannelPartners, ChannelPartner } from "@/lib/hooks/useChannelPartners";
+import { useChannelPartners } from "@/lib/hooks/useChannelPartners";
 import { useLoanTypes } from "@/lib/hooks/useLoanTypes";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
-  Plus, Search, Filter, Download, ArrowUpDown, ChevronLeft, ChevronRight,
-  Loader2, UserCheck, UserX, Landmark, TrendingUp, DollarSign,
-  AlertCircle, Trash2, X, Users, Globe
+  Plus, Search, Download, ArrowUpDown, ChevronLeft, ChevronRight,
+  Loader2, TrendingUp, DollarSign,
+  AlertCircle, Trash2, X, Users
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function ChannelPartnersPage() {
@@ -428,7 +427,7 @@ export default function ChannelPartnersPage() {
                               }
                             }}
                             className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-250 ease-in-out focus:outline-none ${
-                              partner.status === "Active" ? "bg-emerald-500" : "bg-gray-300"
+                              partner.status === "Active" ? "bg-green-500" : "bg-gray-300"
                             }`}
                           >
                             <span

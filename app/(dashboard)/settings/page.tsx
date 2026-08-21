@@ -16,13 +16,18 @@ function Toggle({ defaultOn = false }: { defaultOn?: boolean }) {
   const [on, setOn] = useState(defaultOn);
   return (
     <button
+      type="button"
+      role="switch"
+      aria-checked={on}
       onClick={() => setOn(!on)}
-      className={`relative w-10 h-5.5 rounded-full transition-colors ${on ? "bg-[#2563EB]" : "bg-[#D1D5DB]"}`}
-      style={{ width: 40, height: 22 }}
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+        on ? "bg-green-500" : "bg-[#D1D5DB]"
+      }`}
     >
       <span
-        className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform ${on ? "translate-x-4.5" : ""}`}
-        style={{ width: 18, height: 18, transform: on ? "translateX(18px)" : undefined }}
+        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+          on ? "translate-x-5" : "translate-x-0"
+        }`}
       />
     </button>
   );
@@ -32,13 +37,17 @@ function ControlledToggle({ value, onChange }: { value: boolean; onChange: (val:
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={value}
       onClick={() => onChange(!value)}
-      className={`relative w-10 h-5.5 rounded-full transition-colors ${value ? "bg-[#2563EB]" : "bg-[#D1D5DB]"}`}
-      style={{ width: 40, height: 22 }}
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+        value ? "bg-green-500" : "bg-[#D1D5DB]"
+      }`}
     >
       <span
-        className={`absolute top-0.5 left-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform ${value ? "translate-x-4.5" : ""}`}
-        style={{ width: 18, height: 18, transform: value ? "translateX(18px)" : undefined }}
+        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+          value ? "translate-x-5" : "translate-x-0"
+        }`}
       />
     </button>
   );

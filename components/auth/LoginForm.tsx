@@ -1,9 +1,10 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import Link from "next/link";
 import { Shield, Mail, Lock, ArrowRight, Loader2, Sparkles, TrendingUp, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { login } from "@/app/actions/auth";
+import logo from "@/public/rws.png"
+import Image from "next/image";
 
 export function LoginForm() {
   const [state, formAction, isPending] = useActionState(login, null);
@@ -18,24 +19,25 @@ export function LoginForm() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-[#818CF8] opacity-35 blur-3xl pointer-events-none" />
 
         {/* Top Logo */}
-        <div className="flex items-center gap-3 relative z-10">
+        <Image src={logo} alt="Logo" className="relative z-10" width={200} height={200} />
+        {/* <div className="flex items-center gap-3 relative z-10">
           <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center">
             <Shield className="w-5.5 h-5.5 text-white" />
           </div>
           <div>
-            <span className="text-lg font-bold tracking-tight">Relic OS</span>
+            <span className="text-lg font-bold tracking-tight">Relic Wealth Solutions</span>
             <p className="text-[10px] text-blue-200 tracking-wider uppercase font-semibold">Loan Management</p>
           </div>
-        </div>
+        </div> */}
 
         {/* Center Pitch */}
         <div className="my-auto max-w-lg space-y-6 relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-xs font-medium text-blue-100">
-            <Sparkles className="w-3.5 h-3.5 text-blue-300" />
+            <Sparkles className="w-3.5 h-3.5 text-yellow-500" />
             Enterprise CRM & Origination Suite
           </div>
           <h1 className="text-4xl lg:text-5xl font-semibold leading-tight tracking-tight">
-            Streamline your loan operations from lead to disbursement.
+            <em className="text-yellow-400">Streamline</em> your loan operations from lead to disbursement.
           </h1>
           <p className="text-blue-100 text-base leading-relaxed">
             Manage channel partners, track commissions, upload secure KYC documents, and monitor dashboard performance in real time.
@@ -44,11 +46,11 @@ export function LoginForm() {
           {/* Bullet achievements */}
           <div className="grid grid-cols-2 gap-4 pt-6">
             <div className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-5 h-5 text-blue-300 flex-shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
               <span className="text-sm font-medium text-blue-50">Secure Sessions</span>
             </div>
             <div className="flex items-center gap-2.5">
-              <TrendingUp className="w-5 h-5 text-blue-300 flex-shrink-0" />
+              <TrendingUp className="w-5 h-5 text-green-500 flex-shrink-0" />
               <span className="text-sm font-medium text-blue-50">Real-Time Sync</span>
             </div>
           </div>
@@ -56,7 +58,7 @@ export function LoginForm() {
 
         {/* Bottom footer note */}
         <div className="text-xs text-blue-200/80 relative z-10 flex items-center justify-between">
-          <span>&copy; {new Date().getFullYear()} Relic OS. All rights reserved.</span>
+          <span>&copy; {new Date().getFullYear()} Relic Wealth Solutions. All rights reserved.</span>
         </div>
       </div>
 
@@ -70,7 +72,7 @@ export function LoginForm() {
                 <Shield className="w-5.5 h-5.5 text-white" />
               </div>
               <div>
-                <span className="text-lg font-bold text-[#111827]">Relic OS</span>
+                <span className="text-lg font-bold text-[#111827]">Relic Wealth Solutions</span>
                 <p className="text-[10px] text-[#9CA3AF] tracking-wider uppercase font-semibold">Loan Management</p>
               </div>
             </div>

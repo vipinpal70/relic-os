@@ -1,11 +1,11 @@
 "use client";
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useBanks, Bank } from "@/lib/hooks/useBanks";
+import { useBanks } from "@/lib/hooks/useBanks";
 import { useLoanTypes } from "@/lib/hooks/useLoanTypes";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
-  Plus, Search, Filter, Download, ArrowUpDown, ChevronLeft, ChevronRight,
+  Plus, Search, Download, ArrowUpDown, ChevronLeft, ChevronRight,
   Loader2, Landmark, TrendingUp, DollarSign, AlertCircle, Trash2, X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -414,7 +414,7 @@ export default function BanksPage() {
                               }
                             }}
                             className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-250 ease-in-out focus:outline-none ${
-                              bank.status === "Active" ? "bg-emerald-500" : "bg-gray-300"
+                              bank.status === "Active" ? "bg-green-500" : "bg-gray-300"
                             }`}
                           >
                             <span
@@ -423,7 +423,7 @@ export default function BanksPage() {
                               }`}
                             />
                           </button>
-                          <span className={`text-xs font-bold transition-colors ${bank.status === "Active" ? "text-emerald-700" : "text-gray-500"}`}>
+                          <span className={`text-xs font-bold transition-colors ${bank.status === "Active" ? "text-green-700" : "text-gray-500"}`}>
                             {bank.status}
                           </span>
                         </div>
