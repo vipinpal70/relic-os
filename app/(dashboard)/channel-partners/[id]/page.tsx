@@ -868,16 +868,27 @@ function CasesTab({ partnerId }: { partnerId: string }) {
 
   const getStatusColor = (s: string) => {
     switch (s) {
+      case "Underwriting":
       case "New":
         return "bg-blue-50 text-blue-700 border-blue-200";
+      case "Sanctioned":
+        return "bg-emerald-50 text-emerald-700 border-emerald-200";
+      case "Reject":
+      case "Rejected":
+        return "bg-rose-50 text-rose-700 border-rose-200";
+      case "PDD":
+        return "bg-amber-50 text-amber-700 border-amber-200";
+      case "Not Interested":
+      case "Not Intrested":
+        return "bg-red-50 text-red-700 border-red-200";
+      case "Not Contactable":
+        return "bg-yellow-50 text-yellow-800 border-yellow-200";
       case "Pending":
         return "bg-amber-50 text-amber-700 border-amber-200";
       case "Approved":
         return "bg-indigo-50 text-indigo-700 border-indigo-200";
       case "Disbursed":
         return "bg-emerald-50 text-emerald-700 border-emerald-200";
-      case "Rejected":
-        return "bg-rose-50 text-rose-700 border-rose-200";
       default:
         return "bg-gray-50 text-gray-700 border-gray-200";
     }
@@ -904,11 +915,13 @@ function CasesTab({ partnerId }: { partnerId: string }) {
           className="px-3 py-1.5 border border-[#E5E7EB] rounded-xl text-sm bg-white cursor-pointer"
         >
           <option value="">All Status</option>
-          <option value="New">New</option>
-          <option value="Pending">Pending</option>
-          <option value="Approved">Approved</option>
+          <option value="Underwriting">Underwriting</option>
+          <option value="Sanctioned">Sanctioned</option>
+          <option value="Reject">Reject</option>
+          <option value="PDD">PDD</option>
+          <option value="Not Interested">Not Interested</option>
           <option value="Disbursed">Disbursed</option>
-          <option value="Rejected">Rejected</option>
+          <option value="Not Contactable">Not Contactable</option>
         </select>
       </div>
 

@@ -880,15 +880,18 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                     onChange={(e) => setStatusForm({ ...statusForm, status: e.target.value })}
                     className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:outline-none focus:border-blue-500 font-medium text-sm text-[#111827] bg-white cursor-pointer"
                   >
-                    <option value="New">New</option>
-                    <option value="Assigned">Assigned</option>
-                    <option value="Not Connected">Not Connected</option>
+                    {statusForm.status && ![
+                      "Underwriting", "Sanctioned", "Reject", "PDD", "Not Interested", "Disbursed", "Not Contactable"
+                    ].includes(statusForm.status) && (
+                      <option value={statusForm.status}>{statusForm.status}</option>
+                    )}
+                    <option value="Underwriting">Underwriting</option>
+                    <option value="Sanctioned">Sanctioned</option>
+                    <option value="Reject">Reject</option>
+                    <option value="PDD">PDD</option>
                     <option value="Not Interested">Not Interested</option>
-                    <option value="Document Pending">Document Pending</option>
-                    <option value="Processing">Processing</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Rejected">Rejected</option>
                     <option value="Disbursed">Disbursed</option>
+                    <option value="Not Contactable">Not Contactable</option>
                   </select>
                 </div>
 

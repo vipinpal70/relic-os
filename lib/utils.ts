@@ -32,6 +32,12 @@ export function timeAgo(date: string): string {
 }
 
 export const statusColors: Record<string, { bg: string; text: string }> = {
+  Underwriting: { bg: "#EFF6FF", text: "#2563EB" },
+  Sanctioned: { bg: "#DCFCE7", text: "#15803D" },
+  Reject: { bg: "#FEE2E2", text: "#B91C1C" },
+  PDD: { bg: "#FFF7ED", text: "#C2410C" },
+  "Not Contactable": { bg: "#FEF9C3", text: "#92400E" },
+  "Not Intrested": { bg: "#FEE2E2", text: "#991B1B" },
   New: { bg: "#EFF6FF", text: "#2563EB" },
   Assigned: { bg: "#EEF2FF", text: "#4F46E5" },
   "Not Connected": { bg: "#FEF9C3", text: "#92400E" },

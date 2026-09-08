@@ -1,7 +1,12 @@
 import { z } from "zod";
 
 export const LeadValidationSchema = z.object({
-  applicationNumber: z.string().min(3, "Application Number must be at least 3 characters"),
+  applicationNumber: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .refine((val) => !val || val.trim().length >= 3, "Application Number must be at least 3 characters if provided")
+    .transform((val) => (val && val.trim() !== "" ? val.trim() : undefined)),
   applicantName: z.string().min(2, "Applicant Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   phone: z
@@ -30,9 +35,9 @@ export const LeadValidationSchema = z.object({
     .or(z.literal(""))
     .transform(val => val === "" ? undefined : val),
   status: z.enum([
-    "New", "Assigned", "Not Connected", "Not Interested",
-    "Document Pending", "Processing", "Approved", "Rejected", "Disbursed",
-  ]).default("New"),
+    "Underwriting", "Sanctioned", "Reject", "PDD", "Not Interested", "Disbursed", "Not Contactable",
+    "Not Intrested", "Rejected", "New", "Assigned", "Not Connected", "Document Pending", "Processing", "Approved", "Pending",
+  ]).default("Underwriting"),
   disbursedAmount: z.coerce.number().min(0).default(0),
   remarks: z.string().optional().or(z.literal("")),
 });

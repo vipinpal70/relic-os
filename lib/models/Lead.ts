@@ -10,7 +10,7 @@ export interface ILead extends Document {
   bankId: mongoose.Types.ObjectId;
   channelPartnerId?: mongoose.Types.ObjectId;
   assignedUserId?: mongoose.Types.ObjectId;
-  status: "New" | "Assigned" | "Not Connected" | "Not Interested" | "Document Pending" | "Processing" | "Approved" | "Rejected" | "Disbursed" | "Pending";
+  status: "Underwriting" | "Sanctioned" | "Reject" | "PDD" | "Not Interested" | "Disbursed" | "Not Contactable" | "New" | "Assigned" | "Not Connected" | "Document Pending" | "Processing" | "Approved" | "Rejected" | "Pending" | "Not Intrested";
   disbursedAmount: number;
   approvedDate?: string;
   disbursedDate?: string;
@@ -46,11 +46,12 @@ const LeadSchema = new Schema<ILead>(
     status: {
       type: String,
       enum: [
-        "New", "Assigned", "Not Connected", "Not Interested",
-        "Document Pending", "Processing", "Approved", "Rejected", "Disbursed",
+        "Underwriting", "Sanctioned", "Reject", "PDD", "Not Interested", "Disbursed", "Not Contactable",
+        "Not Intrested", "Rejected", "New", "Assigned", "Not Connected",
+        "Document Pending", "Processing", "Approved",
         "Pending", // legacy value — mapped to Processing in API responses
       ],
-      default: "New",
+      default: "Underwriting",
     },
     disbursedAmount: { type: Number, default: 0 },
     approvedDate: { type: String },

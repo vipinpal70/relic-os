@@ -87,7 +87,7 @@ export async function PATCH(
         if (updates.disbursedAmount === undefined || updates.disbursedAmount === 0) {
           updates.disbursedAmount = data.loanAmount ?? originalLead.loanAmount;
         }
-      } else if (data.status === "Approved") {
+      } else if (data.status === "Approved" || data.status === "Sanctioned") {
         updates.approvedDate = new Date().toISOString().split("T")[0];
       }
     }

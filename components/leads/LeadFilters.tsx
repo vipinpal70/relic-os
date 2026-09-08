@@ -15,8 +15,14 @@ interface LeadFiltersProps {
 }
 
 const statuses = [
-  "All", "New", "Assigned", "Not Connected", "Not Interested",
-  "Document Pending", "Processing", "Approved", "Rejected", "Disbursed",
+  "All",
+  "Underwriting",
+  "Sanctioned",
+  "Reject",
+  "PDD",
+  "Not Interested",
+  "Disbursed",
+  "Not Contactable",
 ];
 
 export function LeadFilters({

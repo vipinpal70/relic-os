@@ -14,6 +14,16 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 
 const tabs = ["Overview", "Documents", "Timeline"];
 
+const LEAD_STATUS_OPTIONS = [
+  "Underwriting",
+  "Sanctioned",
+  "Reject",
+  "PDD",
+  "Not Interested",
+  "Disbursed",
+  "Not Contactable",
+];
+
 export default function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
 
@@ -48,7 +58,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
   const [editError, setEditError] = useState("");
 
   const [statusForm, setStatusForm] = useState({
-    status: "New",
+    status: "Underwriting",
     remarks: "",
   });
 
@@ -880,15 +890,12 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                     onChange={(e) => setStatusForm({ ...statusForm, status: e.target.value })}
                     className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:outline-none focus:border-blue-500 font-medium text-sm text-[#111827] bg-white cursor-pointer"
                   >
-                    <option value="New">New</option>
-                    <option value="Assigned">Assigned</option>
-                    <option value="Not Connected">Not Connected</option>
-                    <option value="Not Interested">Not Interested</option>
-                    <option value="Document Pending">Document Pending</option>
-                    <option value="Processing">Processing</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Rejected">Rejected</option>
-                    <option value="Disbursed">Disbursed</option>
+                    {statusForm.status && !LEAD_STATUS_OPTIONS.includes(statusForm.status) && (
+                      <option value={statusForm.status}>{statusForm.status}</option>
+                    )}
+                    {LEAD_STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
                   </select>
                 </div>
 

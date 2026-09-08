@@ -16,8 +16,13 @@ import { PartnerLoading, PartnerUnlinkedNotice } from "./PartnerDashboard";
 const PAGE_SIZE = 15;
 
 const STATUS_OPTIONS = [
-  "New", "Assigned", "Not Connected", "Not Interested",
-  "Document Pending", "Processing", "Approved", "Rejected", "Disbursed",
+  "Underwriting",
+  "Sanctioned",
+  "Reject",
+  "PDD",
+  "Not Interested",
+  "Disbursed",
+  "Not Contactable",
 ];
 
 export function PartnerLeadsView() {

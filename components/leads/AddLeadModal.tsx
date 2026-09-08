@@ -8,8 +8,13 @@ import { useChannelPartners } from "@/lib/hooks/useChannelPartners";
 import { useLoanTypes } from "@/lib/hooks/useLoanTypes";
 
 const STATUS_OPTIONS = [
-  "New", "Assigned", "Not Connected", "Not Interested",
-  "Document Pending", "Processing", "Approved", "Rejected", "Disbursed",
+  "Underwriting",
+  "Sanctioned",
+  "Reject",
+  "PDD",
+  "Not Interested",
+  "Disbursed",
+  "Not Contactable",
 ];
 
 const initialForm = {
@@ -22,7 +27,7 @@ const initialForm = {
   bankId: "",
   channelPartnerId: "",
   assignedUserId: "",
-  status: "New",
+  status: "Underwriting",
   disbursedAmount: "0",
   remarks: "",
 };
@@ -148,14 +153,12 @@ export function AddLeadModal({ open, onClose, onCreated }: AddLeadModalProps) {
             <form onSubmit={handleSubmit} className="mt-4 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#4B5563] mb-1">Application Number *</label>
+                  <label className="block text-xs font-semibold text-[#4B5563] mb-1">Application Number</label>
                   <input
                     type="text"
-                    required
-                    minLength={3}
                     value={formData.applicationNumber}
                     onChange={set("applicationNumber")}
-                    placeholder="e.g. APP-2026-001"
+                    placeholder="e.g. APP-2026-001 (optional)"
                     className="w-full px-3 py-2 border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                   />
                 </div>

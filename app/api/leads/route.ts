@@ -78,18 +78,30 @@ export async function POST(request: Request) {
 
     const data = validationResult.data;
 
-    // Check duplicate application number
-    const exists = await Lead.findOne({ applicationNumber: data.applicationNumber });
-    if (exists) {
-      return NextResponse.json(
-        { error: "A lead with this application number already exists" },
-        { status: 409 }
-      );
+    // Ensure applicationNumber is set (auto-generate unique number if not provided)
+    let appNumber = data.applicationNumber;
+    if (!appNumber) {
+      let isUnique = false;
+      while (!isUnique) {
+        const rand = Math.floor(10000 + Math.random() * 90000);
+        appNumber = `APP-${new Date().getFullYear()}-${rand}`;
+        const duplicate = await Lead.findOne({ applicationNumber: appNumber });
+        if (!duplicate) isUnique = true;
+      }
+    } else {
+      const exists = await Lead.findOne({ applicationNumber: appNumber });
+      if (exists) {
+        return NextResponse.json(
+          { error: "A lead with this application number already exists" },
+          { status: 409 }
+        );
+      }
     }
 
     // Set approved/disbursed dates automatically based on initial status if applicable
     const leadData: any = {
       ...data,
+      applicationNumber: appNumber,
       createdBy: user.name,
       updatedBy: user.name,
     };
@@ -99,7 +111,7 @@ export async function POST(request: Request) {
       if (data.disbursedAmount === 0) {
         leadData.disbursedAmount = data.loanAmount;
       }
-    } else if (data.status === "Approved") {
+    } else if (data.status === "Approved" || data.status === "Sanctioned") {
       leadData.approvedDate = new Date().toISOString().split("T")[0];
     }
 

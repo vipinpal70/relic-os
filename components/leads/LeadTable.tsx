@@ -22,6 +22,16 @@ interface LeadTableProps {
   leads: Lead[];
 }
 
+export const LEAD_STATUS_OPTIONS = [
+  "Underwriting",
+  "Sanctioned",
+  "Reject",
+  "PDD",
+  "Not Interested",
+  "Disbursed",
+  "Not Contactable",
+];
+
 interface StatusSelectProps {
   leadId: string;
   initialStatus: string;
@@ -33,15 +43,22 @@ function StatusSelect({ leadId, initialStatus }: StatusSelectProps) {
 
   const getStatusColor = (s: string) => {
     switch (s) {
+      case "Underwriting":    return "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100/70";
+      case "Sanctioned":      return "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/70";
+      case "Reject":
+      case "Rejected":        return "bg-red-50 text-red-700 border-red-200 hover:bg-red-100/70";
+      case "PDD":             return "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100/70";
+      case "Not Interested":
+      case "Not Intrested":   return "bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100/70";
+      case "Disbursed":       return "bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100/70";
+      case "Not Contactable":
+      case "Not Connected":   return "bg-yellow-50 text-yellow-800 border-yellow-200 hover:bg-yellow-100/70";
+      // Legacy support
       case "New":             return "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100/70";
       case "Assigned":        return "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100/70";
-      case "Not Connected":   return "bg-yellow-50 text-yellow-800 border-yellow-200 hover:bg-yellow-100/70";
-      case "Not Interested":  return "bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100/70";
       case "Document Pending":return "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100/70";
       case "Processing":      return "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100/70";
       case "Approved":        return "bg-green-50 text-green-700 border-green-200 hover:bg-green-100/70";
-      case "Disbursed":       return "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/70";
-      case "Rejected":        return "bg-red-50 text-red-700 border-red-200 hover:bg-red-100/70";
       default:                return "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100/70";
     }
   };
@@ -83,15 +100,12 @@ function StatusSelect({ leadId, initialStatus }: StatusSelectProps) {
           backgroundRepeat: "no-repeat",
         }}
       >
-        <option value="New">New</option>
-        <option value="Assigned">Assigned</option>
-        <option value="Not Connected">Not Connected</option>
-        <option value="Not Interested">Not Interested</option>
-        <option value="Document Pending">Document Pending</option>
-        <option value="Processing">Processing</option>
-        <option value="Approved">Approved</option>
-        <option value="Rejected">Rejected</option>
-        <option value="Disbursed">Disbursed</option>
+        {status && !LEAD_STATUS_OPTIONS.includes(status) && (
+          <option value={status}>{status}</option>
+        )}
+        {LEAD_STATUS_OPTIONS.map((opt) => (
+          <option key={opt} value={opt}>{opt}</option>
+        ))}
       </select>
       {updating && (
         <span className="absolute -right-5 flex items-center justify-center">
