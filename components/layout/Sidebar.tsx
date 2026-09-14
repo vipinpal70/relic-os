@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, FolderOpen, TrendingUp, FileText,
-  UserCog, User, Settings, Megaphone, Bell, Shield, LogOut, Landmark, X, Briefcase
+  UserCog, User, Settings, Megaphone, Bell, Shield, LogOut, Landmark, X, Briefcase, Building2
 } from "lucide-react";
 import { useSession } from "@/components/providers/SessionProvider";
 import { logout } from "@/app/actions/auth";
@@ -14,6 +14,7 @@ const navItems = [
   { label: "Ad Leads", href: "/ad-leads", icon: Megaphone },
   { label: "Channel Partners", href: "/channel-partners", icon: UserCog },
   { label: "Bank Management", href: "/banks", icon: Landmark },
+  { label: "Corporates", href: "/corporates", icon: Building2 },
   { label: "Loan Types", href: "/loan-types", icon: FolderOpen },
   { label: "Billing & Invoices", href: "/billing", icon: FileText },
   { label: "Team Management", href: "/team", icon: UserCog },

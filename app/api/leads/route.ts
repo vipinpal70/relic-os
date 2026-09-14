@@ -26,6 +26,7 @@ export async function GET(request: Request) {
     const status = searchParams.get("status") || undefined;
     const bankId = searchParams.get("bankId") || undefined;
     const channelPartnerId = scope || searchParams.get("channelPartnerId") || undefined;
+    const corporateId = searchParams.get("corporateId") || undefined;
     const loanType = searchParams.get("loanType") || undefined;
     const startDate = searchParams.get("startDate") || undefined;
     const endDate = searchParams.get("endDate") || undefined;
@@ -39,6 +40,7 @@ export async function GET(request: Request) {
       status,
       bankId,
       channelPartnerId,
+      corporateId,
       loanType,
       startDate,
       endDate,

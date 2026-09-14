@@ -52,6 +52,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     loanType: "Home Loan",
     bankId: "",
     channelPartnerId: "",
+    corporateId: "",
     assignedUserId: "",
     remarks: "",
   });
@@ -74,6 +75,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
   // Dropdown option lists for the edit form (ids + display labels)
   const [existingBanks, setExistingBanks] = useState<{ _id: string; label: string }[]>([]);
   const [existingPartners, setExistingPartners] = useState<{ _id: string; label: string }[]>([]);
+  const [existingCorporates, setExistingCorporates] = useState<{ _id: string; label: string }[]>([]);
   const [teamMembers, setTeamMembers] = useState<{ _id: string; label: string }[]>([]);
 
   const handleDrag = (e: React.DragEvent) => {
@@ -125,6 +127,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
         loanType: data.loan_type,
         bankId: data.bank_id || "",
         channelPartnerId: data.channel_partner_id || "",
+        corporateId: data.corporate_id || "",
         assignedUserId: data.assigned_user_id || "",
         remarks: data.remarks || "",
       });
@@ -198,6 +201,15 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
         }
       }
 
+      const corpRes = await fetch("/api/corporates?limit=100");
+      if (corpRes.ok) {
+        const corpData = await corpRes.json();
+        if (corpData && corpData.data) {
+          const list = corpData.data.map((c: any) => ({ _id: c._id, label: c.corporateName }));
+          setExistingCorporates(list);
+        }
+      }
+
       const teamRes = await fetch("/api/team");
       if (teamRes.ok) {
         const users = await teamRes.json();
@@ -234,6 +246,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
       loanType: lead.loan_type,
       bankId: lead.bank_id || "",
       channelPartnerId: lead.channel_partner_id || "",
+      corporateId: lead.corporate_id || "",
       assignedUserId: lead.assigned_user_id || "",
       remarks: lead.remarks || "",
     });
@@ -525,6 +538,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                       { label: "Phone", value: lead.phone },
                       { label: "Lead Source", value: lead.lead_source },
                       { label: "Channel Partner", value: lead.channel_partner || "—" },
+                      { label: "Corporate", value: lead.corporate || "—" },
                       { label: "Assigned RM", value: lead.assigned_user || "—" },
                     ].map(({ label, value }) => (
                       <div key={label} className="flex items-center justify-between py-2 border-b border-[#F3F4F6] last:border-0 text-sm">
@@ -816,6 +830,23 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                       {existingPartners.map((p) => (
                         <option key={p._id} value={p._id}>
                           {p.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Corporate Selector */}
+                  <div className="space-y-1.5">
+                    <label className="text-[#374151]">Corporate</label>
+                    <select
+                      value={editForm.corporateId}
+                      onChange={(e) => setEditForm({ ...editForm, corporateId: e.target.value })}
+                      className="w-full px-3 py-2 border border-[#D1D5DB] rounded-xl focus:outline-none focus:border-blue-500 font-semibold text-sm text-[#111827] bg-white cursor-pointer"
+                    >
+                      <option value="">-- None --</option>
+                      {existingCorporates.map((c) => (
+                        <option key={c._id} value={c._id}>
+                          {c.label}
                         </option>
                       ))}
                     </select>

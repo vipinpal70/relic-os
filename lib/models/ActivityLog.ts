@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IActivityLog extends Document {
-  entityType: "Bank" | "ChannelPartner" | "Lead" | "AdLead" | "Commission" | "CommissionPayment" | "LoanType";
+  entityType: "Bank" | "ChannelPartner" | "Corporate" | "Lead" | "AdLead" | "Commission" | "CommissionPayment" | "LoanType";
   entityId: mongoose.Types.ObjectId;
   action: string;
   details: string;
@@ -13,7 +13,7 @@ const ActivityLogSchema = new Schema<IActivityLog>(
   {
     entityType: {
       type: String,
-      enum: ["Bank", "ChannelPartner", "Lead", "AdLead", "Commission", "CommissionPayment", "LoanType"],
+      enum: ["Bank", "ChannelPartner", "Corporate", "Lead", "AdLead", "Commission", "CommissionPayment", "LoanType"],
       required: true,
     },
     entityId: { type: Schema.Types.ObjectId, required: true },

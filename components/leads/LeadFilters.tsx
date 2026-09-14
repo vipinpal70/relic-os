@@ -8,9 +8,12 @@ interface LeadFiltersProps {
   setStatus: (v: string) => void;
   bank: string;
   setBank: (v: string) => void;
+  corporate: string;
+  setCorporate: (v: string) => void;
   loanType: string;
   setLoanType: (v: string) => void;
   banks: string[];
+  corporates: string[];
   loanTypes: string[];
 }
 
@@ -32,9 +35,12 @@ export function LeadFilters({
   setStatus,
   bank,
   setBank,
+  corporate,
+  setCorporate,
   loanType,
   setLoanType,
   banks,
+  corporates,
   loanTypes,
 }: LeadFiltersProps) {
   return (
@@ -76,6 +82,20 @@ export function LeadFilters({
             <option value="All">All Banks</option>
             {banks.filter(b => b !== "All").map((b) => (
               <option key={b} value={b}>{b}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Corporate Filter */}
+        <div className="shrink-0">
+          <select
+            value={corporate}
+            onChange={(e) => setCorporate(e.target.value)}
+            className="px-3 py-2 bg-white border border-[#D1D5DB] rounded-lg text-sm text-[#374151] font-semibold focus:outline-none focus:border-[#3B82F6] transition-all cursor-pointer"
+          >
+            <option value="All">All Corporates</option>
+            {corporates.filter(c => c !== "All").map((c) => (
+              <option key={c} value={c}>{c}</option>
             ))}
           </select>
         </div>

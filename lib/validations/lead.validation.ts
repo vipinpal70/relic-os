@@ -28,6 +28,12 @@ export const LeadValidationSchema = z.object({
     .optional()
     .or(z.literal(""))
     .transform(val => val === "" ? undefined : val),
+  corporateId: z
+    .string()
+    .regex(/^[0-9a-fA-F]{24}$/, "Invalid Corporate ID")
+    .optional()
+    .or(z.literal(""))
+    .transform(val => val === "" ? undefined : val),
   assignedUserId: z
     .string()
     .regex(/^[0-9a-fA-F]{24}$/, "Invalid Assigned User ID")

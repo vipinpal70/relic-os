@@ -41,6 +41,7 @@ function AdminAdLeadsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
   const [bankFilter, setBankFilter] = useState("All");
+  const [corporateFilter, setCorporateFilter] = useState("All");
   const [loanTypeFilter, setLoanTypeFilter] = useState("All");
 
   const [integration, setIntegration] = useState<IntegrationConfig | null>(null);
@@ -114,6 +115,12 @@ function AdminAdLeadsPage() {
     return ["All", ...Array.from(new Set(banks))];
   }, [leadsList]);
 
+  const uniqueCorporates = useMemo(() => {
+    if (!Array.isArray(leadsList)) return ["All"];
+    const corporates = leadsList.map((l) => l.corporate).filter(Boolean);
+    return ["All", ...Array.from(new Set(corporates))];
+  }, [leadsList]);
+
   const uniqueLoanTypes = useMemo(() => {
     if (!Array.isArray(leadsList)) return ["All"];
     const types = leadsList.map((l) => l.loan_type).filter(Boolean);
@@ -133,10 +140,11 @@ function AdminAdLeadsPage() {
         appNumber.toLowerCase().includes(search.toLowerCase());
       const matchStatus = status === "All" || l.status === status;
       const matchBank = bankFilter === "All" || l.bank === bankFilter;
+      const matchCorporate = corporateFilter === "All" || l.corporate === corporateFilter;
       const matchLoanType = loanTypeFilter === "All" || l.loan_type === loanTypeFilter;
-      return matchSearch && matchStatus && matchBank && matchLoanType;
+      return matchSearch && matchStatus && matchBank && matchCorporate && matchLoanType;
     });
-  }, [leadsList, search, status, bankFilter, loanTypeFilter]);
+  }, [leadsList, search, status, bankFilter, corporateFilter, loanTypeFilter]);
 
   // Formatter for sync status time
   const getSyncStatusText = () => {
@@ -211,9 +219,12 @@ function AdminAdLeadsPage() {
           setStatus={setStatus}
           bank={bankFilter}
           setBank={setBankFilter}
+          corporate={corporateFilter}
+          setCorporate={setCorporateFilter}
           loanType={loanTypeFilter}
           setLoanType={setLoanTypeFilter}
           banks={uniqueBanks}
+          corporates={uniqueCorporates}
           loanTypes={uniqueLoanTypes}
         />
 

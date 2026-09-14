@@ -32,6 +32,7 @@ function AdminLeadsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
   const [bankFilter, setBankFilter] = useState("All");
+  const [corporateFilter, setCorporateFilter] = useState("All");
   const [loanTypeFilter, setLoanTypeFilter] = useState("All");
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -62,6 +63,12 @@ function AdminLeadsPage() {
     return ["All", ...Array.from(new Set(banks))];
   }, [leadsList]);
 
+  const uniqueCorporates = useMemo(() => {
+    if (!Array.isArray(leadsList)) return ["All"];
+    const corporates = leadsList.map((l) => l.corporate).filter(Boolean);
+    return ["All", ...Array.from(new Set(corporates))];
+  }, [leadsList]);
+
   const uniqueLoanTypes = useMemo(() => {
     if (!Array.isArray(leadsList)) return ["All"];
     const types = leadsList.map((l) => l.loan_type).filter(Boolean);
@@ -81,10 +88,11 @@ function AdminLeadsPage() {
         appNumber.toLowerCase().includes(search.toLowerCase());
       const matchStatus = status === "All" || l.status === status;
       const matchBank = bankFilter === "All" || l.bank === bankFilter;
+      const matchCorporate = corporateFilter === "All" || l.corporate === corporateFilter;
       const matchLoanType = loanTypeFilter === "All" || l.loan_type === loanTypeFilter;
-      return matchSearch && matchStatus && matchBank && matchLoanType;
+      return matchSearch && matchStatus && matchBank && matchCorporate && matchLoanType;
     });
-  }, [leadsList, search, status, bankFilter, loanTypeFilter]);
+  }, [leadsList, search, status, bankFilter, corporateFilter, loanTypeFilter]);
 
   // CSV Export — exports the currently filtered rows
   const exportToCSV = () => {
@@ -98,7 +106,7 @@ function AdminLeadsPage() {
 
     const headers = [
       "Application Number", "Applicant Name", "Email", "Phone", "Loan Type",
-      "Loan Amount", "Bank", "Channel Partner", "Assigned To", "Source",
+      "Loan Amount", "Bank", "Channel Partner", "Corporate", "Assigned To", "Source",
       "Status", "Disbursed Amount", "Approved Date", "Disbursed Date",
       "Remarks", "Created Date",
     ];
@@ -111,6 +119,7 @@ function AdminLeadsPage() {
       l.loan_amount,
       l.bank,
       l.channel_partner,
+      l.corporate,
       l.assigned_user,
       l.lead_source,
       l.status,
@@ -171,9 +180,12 @@ function AdminLeadsPage() {
           setStatus={setStatus}
           bank={bankFilter}
           setBank={setBankFilter}
+          corporate={corporateFilter}
+          setCorporate={setCorporateFilter}
           loanType={loanTypeFilter}
           setLoanType={setLoanTypeFilter}
           banks={uniqueBanks}
+          corporates={uniqueCorporates}
           loanTypes={uniqueLoanTypes}
         />
 

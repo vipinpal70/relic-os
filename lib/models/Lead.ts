@@ -9,6 +9,7 @@ export interface ILead extends Document {
   loanType: string;
   bankId: mongoose.Types.ObjectId;
   channelPartnerId?: mongoose.Types.ObjectId;
+  corporateId?: mongoose.Types.ObjectId;
   assignedUserId?: mongoose.Types.ObjectId;
   status: "Underwriting" | "Sanctioned" | "Reject" | "PDD" | "Not Interested" | "Disbursed" | "Not Contactable" | "New" | "Assigned" | "Not Connected" | "Document Pending" | "Processing" | "Approved" | "Rejected" | "Pending" | "Not Intrested";
   disbursedAmount: number;
@@ -42,6 +43,7 @@ const LeadSchema = new Schema<ILead>(
     loanType: { type: String, required: true },
     bankId: { type: Schema.Types.ObjectId, ref: "Bank", required: true },
     channelPartnerId: { type: Schema.Types.ObjectId, ref: "ChannelPartner" },
+    corporateId: { type: Schema.Types.ObjectId, ref: "Corporate" },
     assignedUserId: { type: Schema.Types.ObjectId, ref: "User" },
     status: {
       type: String,
@@ -77,6 +79,7 @@ const LeadSchema = new Schema<ILead>(
 LeadSchema.index({ status: 1 });
 LeadSchema.index({ bankId: 1 });
 LeadSchema.index({ channelPartnerId: 1 });
+LeadSchema.index({ corporateId: 1 });
 LeadSchema.index({ assignedUserId: 1 });
 LeadSchema.index({ isDeleted: 1 });
 LeadSchema.index({ createdAt: -1 });

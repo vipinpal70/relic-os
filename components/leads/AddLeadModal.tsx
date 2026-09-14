@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, AlertCircle, UserPlus, X } from "lucide-react";
 import { useBanks } from "@/lib/hooks/useBanks";
 import { useChannelPartners } from "@/lib/hooks/useChannelPartners";
+import { useCorporates } from "@/lib/hooks/useCorporates";
 import { useLoanTypes } from "@/lib/hooks/useLoanTypes";
 
 const STATUS_OPTIONS = [
@@ -26,6 +27,7 @@ const initialForm = {
   loanType: "",
   bankId: "",
   channelPartnerId: "",
+  corporateId: "",
   assignedUserId: "",
   status: "Underwriting",
   disbursedAmount: "0",
@@ -46,6 +48,7 @@ export function AddLeadModal({ open, onClose, onCreated }: AddLeadModalProps) {
 
   const { data: banks } = useBanks({ status: "Active", limit: 100 });
   const { data: partners } = useChannelPartners({ status: "Active", limit: 100 });
+  const { data: corporates } = useCorporates({ status: "Active", limit: 100 });
   const { loanTypes } = useLoanTypes("Active");
 
   useEffect(() => {
@@ -246,6 +249,19 @@ export function AddLeadModal({ open, onClose, onCreated }: AddLeadModalProps) {
                     <option value="">None (direct lead)</option>
                     {partners.map((p: any) => (
                       <option key={p._id} value={p._id}>{p.name} ({p.companyName})</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#4B5563] mb-1">Corporate</label>
+                  <select
+                    value={formData.corporateId}
+                    onChange={set("corporateId")}
+                    className="w-full px-3 py-2 border border-[#E5E7EB] rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB] cursor-pointer"
+                  >
+                    <option value="">None</option>
+                    {corporates.map((c: any) => (
+                      <option key={c._id} value={c._id}>{c.corporateName}</option>
                     ))}
                   </select>
                 </div>

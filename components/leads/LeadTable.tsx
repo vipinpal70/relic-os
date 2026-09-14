@@ -11,6 +11,7 @@ interface Lead {
   applicant_name: string;
   loan_type: string;
   bank: string;
+  corporate: string;
   loan_amount: number;
   status: string;
   assigned_user: string;
@@ -128,6 +129,7 @@ export function LeadTable({ leads }: LeadTableProps) {
               <th className="text-left">App No.</th>
               <th className="text-left">Loan Type</th>
               <th className="text-left">Bank</th>
+              <th className="text-left">Corporate</th>
               <th className="text-right">Amount</th>
               <th className="text-left">Status</th>
               <th className="text-left">Assigned To</th>
@@ -154,6 +156,7 @@ export function LeadTable({ leads }: LeadTableProps) {
                 <td className="text-[#4B5563] font-mono text-xs">{lead.application_number}</td>
                 <td className="text-[#374151]">{lead.loan_type}</td>
                 <td className="text-[#374151]">{lead.bank || "—"}</td>
+                <td className="text-[#374151]">{lead.corporate || "—"}</td>
                 <td className="text-right font-semibold text-[#111827]">{formatCurrency(lead.loan_amount)}</td>
                 <td>
                   <StatusSelect leadId={lead.id} initialStatus={lead.status} />

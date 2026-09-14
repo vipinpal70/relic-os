@@ -1,4 +1,10 @@
 import Lead, { ILead } from "@/lib/models/Lead";
+// Side-effect imports: ensure referenced models are registered with mongoose
+// before any populate() runs, regardless of the caller's import graph.
+import "@/lib/models/Bank";
+import "@/lib/models/ChannelPartner";
+import "@/lib/models/Corporate";
+import "@/lib/models/User";
 
 export class LeadRepository {
   async create(data: Partial<ILead>): Promise<ILead> {
@@ -9,6 +15,7 @@ export class LeadRepository {
     return await Lead.findOne({ _id: id, isDeleted: false })
       .populate("bankId", "bankName branch")
       .populate("channelPartnerId", "name companyName")
+      .populate("corporateId", "corporateName")
       .populate("assignedUserId", "name email");
   }
 
@@ -16,6 +23,7 @@ export class LeadRepository {
     return await Lead.findOne({ ...filter, isDeleted: false })
       .populate("bankId", "bankName branch")
       .populate("channelPartnerId", "name companyName")
+      .populate("corporateId", "corporateName")
       .populate("assignedUserId", "name email");
   }
 
@@ -36,6 +44,7 @@ export class LeadRepository {
     status?: string;
     bankId?: string;
     channelPartnerId?: string;
+    corporateId?: string;
     loanType?: string;
     startDate?: string; // YYYY-MM-DD
     endDate?: string;   // YYYY-MM-DD
@@ -49,6 +58,7 @@ export class LeadRepository {
       status,
       bankId,
       channelPartnerId,
+      corporateId,
       loanType,
       startDate,
       endDate,
@@ -63,6 +73,7 @@ export class LeadRepository {
     if (status) filter.status = status;
     if (bankId) filter.bankId = bankId;
     if (channelPartnerId) filter.channelPartnerId = channelPartnerId;
+    if (corporateId) filter.corporateId = corporateId;
     if (loanType) filter.loanType = loanType;
 
     // Date range filter based on createdAt
@@ -92,6 +103,7 @@ export class LeadRepository {
       Lead.find(filter)
         .populate("bankId", "bankName branch")
         .populate("channelPartnerId", "name companyName")
+        .populate("corporateId", "corporateName")
         .populate("assignedUserId", "name email")
         .sort(sort)
         .skip(skip)

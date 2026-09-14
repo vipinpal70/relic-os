@@ -115,6 +115,8 @@ export function formatLead(c: any): any {
     bank_id: obj.bankId?._id?.toString() || (obj.bankId && !obj.bankId.bankName ? obj.bankId.toString() : ""),
     channel_partner: obj.channelPartnerId?.companyName || obj.channelPartnerId?.name || "",
     channel_partner_id: obj.channelPartnerId?._id?.toString() || (obj.channelPartnerId && !obj.channelPartnerId.name ? obj.channelPartnerId.toString() : ""),
+    corporate: obj.corporateId?.corporateName || "",
+    corporate_id: obj.corporateId?._id?.toString() || (obj.corporateId && !obj.corporateId.corporateName ? obj.corporateId.toString() : ""),
     assigned_user: obj.assignedUserId?.name || "",
     assigned_user_id: obj.assignedUserId?._id?.toString() || (obj.assignedUserId && !obj.assignedUserId.name ? obj.assignedUserId.toString() : ""),
     lead_source: obj.createdBy === "System" ? "Sync" : "Manual",
