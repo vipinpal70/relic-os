@@ -15,7 +15,7 @@ export interface InvoiceLineItem {
 export interface Invoice {
   _id: string;
   invoiceNumber: string;
-  entityType: "Bank" | "ChannelPartner";
+  entityType: "Bank" | "ChannelPartner" | "Corporate";
   entityId: string;
   entitySnapshot: {
     name: string;
@@ -66,7 +66,7 @@ export interface BillableLead {
 }
 
 export interface GenerateInvoicePayload {
-  entityType: "Bank" | "ChannelPartner";
+  entityType: "Bank" | "ChannelPartner" | "Corporate";
   entityId: string;
   leadIds: string[];
   periodStart?: string;
@@ -78,7 +78,7 @@ export interface GenerateInvoicePayload {
 
 export function useInvoices(
   params: {
-    entityType?: "Bank" | "ChannelPartner";
+    entityType?: "Bank" | "ChannelPartner" | "Corporate";
     entityId?: string;
     status?: string;
     page?: number;
@@ -190,7 +190,7 @@ export function useInvoice(id: string) {
 }
 
 export function useBillableLeads(params: {
-  entityType: "Bank" | "ChannelPartner";
+  entityType: "Bank" | "ChannelPartner" | "Corporate";
   entityId: string;
   startDate?: string;
   endDate?: string;

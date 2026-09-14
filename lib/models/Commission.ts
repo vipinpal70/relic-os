@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface ICommission extends Document {
   caseId: mongoose.Types.ObjectId;
-  entityType: "Bank" | "ChannelPartner";
+  entityType: "Bank" | "ChannelPartner" | "Corporate";
   entityId: mongoose.Types.ObjectId;
   rate: number;
   commissionType: "Fixed" | "Percentage";
@@ -24,7 +24,7 @@ export interface ICommission extends Document {
 const CommissionSchema = new Schema<ICommission>(
   {
     caseId: { type: Schema.Types.ObjectId, ref: "Lead", required: true },
-    entityType: { type: String, enum: ["Bank", "ChannelPartner"], required: true },
+    entityType: { type: String, enum: ["Bank", "ChannelPartner", "Corporate"], required: true },
     entityId: {
       type: Schema.Types.ObjectId,
       required: true,

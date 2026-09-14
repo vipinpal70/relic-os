@@ -2,10 +2,11 @@
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useCorporates } from "@/lib/hooks/useCorporates";
+import { useLoanTypes } from "@/lib/hooks/useLoanTypes";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
   Plus, Search, Download, ArrowUpDown, ChevronLeft, ChevronRight,
-  Loader2, Building2, TrendingUp, DollarSign, AlertCircle, X
+  Loader2, Building2, TrendingUp, DollarSign, AlertCircle, X, Trash2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -29,6 +30,9 @@ export default function CorporatesPage() {
     sortOrder,
   } as any) as any;
 
+  // Active Loan Types for commission rows
+  const { loanTypes } = useLoanTypes("Active");
+
   // Form Drawer state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -46,6 +50,35 @@ export default function CorporatesPage() {
     status: "Active" as "Active" | "Inactive",
   });
 
+  // Multiple Row Commission table in Add Form
+  const emptyCommissionRow = () => ({
+    loanType: "",
+    commissionValue: 1.0,
+    commissionType: "Percentage" as "Fixed" | "Percentage",
+    effectiveFrom: new Date().toISOString().split("T")[0],
+    effectiveTo: "",
+    minAmount: 0,
+    maxAmount: 999999999,
+  });
+
+  const [commissionRows, setCommissionRows] = useState<Array<ReturnType<typeof emptyCommissionRow>>>([
+    emptyCommissionRow(),
+  ]);
+
+  const handleAddCommissionRow = () => {
+    setCommissionRows([...commissionRows, emptyCommissionRow()]);
+  };
+
+  const handleRemoveCommissionRow = (index: number) => {
+    setCommissionRows(commissionRows.filter((_, i) => i !== index));
+  };
+
+  const handleCommissionRowChange = (index: number, field: string, value: any) => {
+    const updated = [...commissionRows];
+    updated[index] = { ...updated[index], [field]: value };
+    setCommissionRows(updated);
+  };
+
   const resetForm = () => {
     setBasicDetails({
       corporateName: "",
@@ -60,6 +93,7 @@ export default function CorporatesPage() {
       notes: "",
       status: "Active",
     });
+    setCommissionRows([emptyCommissionRow()]);
   };
 
   const handleSort = (field: string) => {
@@ -85,6 +119,27 @@ export default function CorporatesPage() {
       errors.phone = "Invalid Indian mobile (10 digits starting with 6-9)";
     }
 
+    // Validate commission rows
+    const loanTypesSeen = new Set<string>();
+    commissionRows.forEach((row, i) => {
+      if (!row.loanType) {
+        errors[`row_${i}_loanType`] = "Required";
+      } else {
+        if (loanTypesSeen.has(row.loanType.toLowerCase())) {
+          errors[`row_${i}_loanType`] = "Duplicate product";
+        }
+        loanTypesSeen.add(row.loanType.toLowerCase());
+      }
+
+      if (row.commissionValue === undefined || row.commissionValue < 0) {
+        errors[`row_${i}_val`] = "Min 0";
+      }
+
+      if (!row.effectiveFrom) {
+        errors[`row_${i}_date`] = "Required";
+      }
+    });
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -94,7 +149,15 @@ export default function CorporatesPage() {
     if (!validateForm()) return;
 
     try {
-      await createCorporate(basicDetails);
+      const data = {
+        ...basicDetails,
+        commissionTable: commissionRows.map(row => ({
+          ...row,
+          effectiveTo: row.effectiveTo || undefined,
+        })),
+      };
+
+      await createCorporate(data);
       setIsDrawerOpen(false);
       resetForm();
     } catch (err: any) {
@@ -534,6 +597,142 @@ export default function CorporatesPage() {
                         onChange={(e) => setBasicDetails({ ...basicDetails, notes: e.target.value })}
                         className="w-full px-3.5 py-2 border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] resize-none"
                       />
+                    </div>
+                  </div>
+
+                  {/* Multiple Loan Commission Table Row additions */}
+                  <div className="space-y-4 pt-4 border-t border-[#E5E7EB]">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold text-[#111827] uppercase tracking-wide">Loan Commission Rates</h4>
+                      <button
+                        type="button"
+                        onClick={handleAddCommissionRow}
+                        className="flex items-center gap-1 text-[#2563EB] hover:text-[#1D4ED8] text-xs font-bold transition-all"
+                      >
+                        <Plus size={14} />
+                        <span>Add Row</span>
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {commissionRows.map((row, idx) => (
+                        <div key={idx} className="card p-4 bg-gray-50/70 border border-[#ECEEF2] relative">
+                          {commissionRows.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCommissionRow(idx)}
+                              className="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                              <label className="block text-xs font-bold text-[#6B7280] mb-1">Loan Type *</label>
+                              <select
+                                required
+                                value={row.loanType}
+                                onChange={(e) => handleCommissionRowChange(idx, "loanType", e.target.value)}
+                                className={`w-full px-3 py-2.5 border rounded-lg text-xs bg-white focus:outline-none ${
+                                  formErrors[`row_${idx}_loanType`] ? "border-red-500" : "border-[#E5E7EB]"
+                                }`}
+                              >
+                                <option value="">Select product...</option>
+                                {loanTypes.map((lt) => (
+                                  <option key={lt._id} value={lt.name}>
+                                    {lt.name}
+                                  </option>
+                                ))}
+                              </select>
+                              {formErrors[`row_${idx}_loanType`] && (
+                                <p className="text-[10px] text-red-500 font-medium">{formErrors[`row_${idx}_loanType`]}</p>
+                              )}
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-bold text-[#6B7280] mb-1">Commission Type</label>
+                              <select
+                                value={row.commissionType}
+                                onChange={(e) => handleCommissionRowChange(idx, "commissionType", e.target.value)}
+                                className="w-full px-3 py-2.5 border border-[#E5E7EB] rounded-lg text-xs bg-white focus:outline-none"
+                              >
+                                <option value="Percentage">Percentage (%)</option>
+                                <option value="Fixed">Fixed Amount (₹)</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-bold text-[#6B7280] mb-1">Commission Value *</label>
+                              <input
+                                type="number"
+                                required
+                                step="any"
+                                value={Number.isNaN(row.commissionValue) ? "" : row.commissionValue}
+                                onChange={(e) => {
+                                  const v = parseFloat(e.target.value);
+                                  handleCommissionRowChange(idx, "commissionValue", Number.isNaN(v) ? 0 : v);
+                                }}
+                                className={`w-full px-3 py-2 border rounded-lg text-xs focus:outline-none ${
+                                  formErrors[`row_${idx}_val`] ? "border-red-500" : "border-[#E5E7EB]"
+                                }`}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-2.5">
+                            <div className="col-span-2">
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="block text-xs font-bold text-[#6B7280] mb-1">Effective From *</label>
+                                  <input
+                                    type="date"
+                                    required
+                                    value={row.effectiveFrom}
+                                    onChange={(e) => handleCommissionRowChange(idx, "effectiveFrom", e.target.value)}
+                                    className="w-full px-2 py-0.5 border border-[#E5E7EB] rounded-lg text-sm font-mono focus:outline-none"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-[#6B7280] mb-1">Effective To</label>
+                                  <input
+                                    type="date"
+                                    value={row.effectiveTo}
+                                    onChange={(e) => handleCommissionRowChange(idx, "effectiveTo", e.target.value)}
+                                    className="w-full px-2 py-0.5 border border-[#E5E7EB] rounded-lg text-sm font-mono focus:outline-none"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-bold text-[#6B7280] mb-1">Min Amount</label>
+                              <input
+                                type="number"
+                                value={Number.isNaN(row.minAmount) ? "" : row.minAmount}
+                                onChange={(e) => {
+                                  const v = parseFloat(e.target.value);
+                                  handleCommissionRowChange(idx, "minAmount", Number.isNaN(v) ? 0 : v);
+                                }}
+                                className="w-full px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-bold text-[#6B7280] mb-1">Max Amount</label>
+                              <input
+                                type="number"
+                                value={Number.isNaN(row.maxAmount) ? "" : row.maxAmount}
+                                onChange={(e) => {
+                                  const v = parseFloat(e.target.value);
+                                  handleCommissionRowChange(idx, "maxAmount", Number.isNaN(v) ? 0 : v);
+                                }}
+                                className="w-full px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
 

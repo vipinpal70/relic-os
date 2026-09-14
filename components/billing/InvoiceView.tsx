@@ -18,7 +18,8 @@ function formatRate(rate: number, commissionType: "Fixed" | "Percentage"): strin
 }
 
 export function InvoiceView({ invoice }: { invoice: Invoice }) {
-  const isBank = invoice.entityType === "Bank";
+  // Channel partners receive a payout statement; banks and corporates are invoiced.
+  const isPayout = invoice.entityType === "ChannelPartner";
   const snap = invoice.entitySnapshot;
   const entityAddress = [snap.address, [snap.city, snap.state].filter(Boolean).join(", ")]
     .filter(Boolean)
@@ -48,7 +49,7 @@ export function InvoiceView({ invoice }: { invoice: Invoice }) {
         </div>
         <div className="text-right">
           <h2 className="text-lg font-bold uppercase tracking-wide">
-            {isBank ? "Tax Invoice" : "Commission Payout Statement"}
+            {isPayout ? "Commission Payout Statement" : "Tax Invoice"}
           </h2>
           <p className="text-sm font-mono font-semibold mt-1">{invoice.invoiceNumber}</p>
           <p className="text-xs text-[#6B7280] mt-1">Date: {formatDate(invoice.invoiceDate)}</p>
@@ -63,7 +64,7 @@ export function InvoiceView({ invoice }: { invoice: Invoice }) {
       {/* Parties */}
       <div className="py-5">
         <p className="text-xs font-bold uppercase tracking-wide text-[#6B7280] mb-1">
-          {isBank ? "Bill To" : "Payable To"}
+          {isPayout ? "Payable To" : "Bill To"}
         </p>
         <p className="text-base font-bold">{snap.name}</p>
         {snap.branch && <p className="text-sm text-[#374151]">Branch: {snap.branch}</p>}
@@ -134,7 +135,7 @@ export function InvoiceView({ invoice }: { invoice: Invoice }) {
             <span>{formatCurrency(invoice.taxAmount)}</span>
           </div>
           <div className="flex justify-between border-t-2 border-[#111827] pt-1.5 font-bold text-base">
-            <span>{isBank ? "Total Payable" : "Total Payout"}</span>
+            <span>{isPayout ? "Total Payout" : "Total Payable"}</span>
             <span>{formatCurrency(invoice.grandTotal)}</span>
           </div>
           {invoice.status === "Paid" && invoice.paidDate && (

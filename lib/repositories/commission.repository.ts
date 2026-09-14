@@ -20,7 +20,7 @@ export class CommissionRepository {
     return await Commission.findOneAndUpdate({ _id: id, isDeleted: false }, data, { new: true });
   }
 
-  async upsert(caseId: string, entityType: "Bank" | "ChannelPartner", data: Partial<ICommission>): Promise<ICommission> {
+  async upsert(caseId: string, entityType: "Bank" | "ChannelPartner" | "Corporate", data: Partial<ICommission>): Promise<ICommission> {
     return await Commission.findOneAndUpdate(
       { caseId, entityType, isDeleted: false },
       { $set: data },
@@ -29,7 +29,7 @@ export class CommissionRepository {
   }
 
   async findAll(params: {
-    entityType?: "Bank" | "ChannelPartner";
+    entityType?: "Bank" | "ChannelPartner" | "Corporate";
     entityId?: string;
     status?: string;
     page?: number;

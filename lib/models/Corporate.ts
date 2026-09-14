@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
+import { ICommissionRule } from "./Bank";
 
 export interface ICorporate extends Document {
   corporateName: string;
@@ -12,12 +13,23 @@ export interface ICorporate extends Document {
   city?: string;
   status: "Active" | "Inactive";
   notes?: string;
+  commissionTable: ICommissionRule[];
   createdBy?: string;
   updatedBy?: string;
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
+
+const CommissionRuleSchema = new Schema<ICommissionRule>({
+  loanType: { type: String, required: true },
+  commissionValue: { type: Number, required: true, min: 0 },
+  commissionType: { type: String, enum: ["Fixed", "Percentage"], default: "Percentage" },
+  effectiveFrom: { type: String, required: true },
+  effectiveTo: { type: String },
+  minAmount: { type: Number, default: 0 },
+  maxAmount: { type: Number, default: 999999999 },
+});
 
 const CorporateSchema = new Schema<ICorporate>(
   {
@@ -32,6 +44,7 @@ const CorporateSchema = new Schema<ICorporate>(
     city: { type: String, trim: true },
     status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
     notes: { type: String },
+    commissionTable: { type: [CommissionRuleSchema], default: [] },
     createdBy: { type: String, default: "System" },
     updatedBy: { type: String, default: "System" },
     isDeleted: { type: Boolean, default: false },

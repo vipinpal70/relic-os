@@ -9,17 +9,18 @@ import { EntityBillingPanel } from "@/components/billing/EntityBillingPanel";
 const TABS = [
   { key: "Bank", label: "Banks" },
   { key: "ChannelPartner", label: "Channel Partners" },
+  { key: "Corporate", label: "Corporates" },
 ] as const;
 
 export default function BillingPage() {
-  const [tab, setTab] = useState<"Bank" | "ChannelPartner">("Bank");
+  const [tab, setTab] = useState<"Bank" | "ChannelPartner" | "Corporate">("Bank");
 
   return (
     <AppLayout title="Billing & Invoices">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
         <PageHeader
           title="Billing & Invoices"
-          subtitle="Generate bank invoices and channel partner payout statements for disbursed loans"
+          subtitle="Generate bank, channel partner, and corporate invoices for disbursed loans"
         />
 
         {/* Tabs */}

@@ -1,6 +1,7 @@
 import Lead, { ILead } from "@/lib/models/Lead";
 import Bank from "@/lib/models/Bank";
 import ChannelPartner from "@/lib/models/ChannelPartner";
+import Corporate from "@/lib/models/Corporate";
 import Commission, { ICommission } from "@/lib/models/Commission";
 import ActivityLog from "@/lib/models/ActivityLog";
 import Invoice, { IInvoice, IInvoiceEntitySnapshot, IInvoiceLineItem } from "@/lib/models/Invoice";
@@ -19,19 +20,31 @@ export class InvoiceError extends Error {
   }
 }
 
-export type EntityType = "Bank" | "ChannelPartner";
+export type EntityType = "Bank" | "ChannelPartner" | "Corporate";
+
+// The Lead field that links a lead to each billing entity type.
+const ENTITY_LEAD_FIELD: Record<EntityType, string> = {
+  Bank: "bankId",
+  ChannelPartner: "channelPartnerId",
+  Corporate: "corporateId",
+};
+
+// Human-readable noun used in error messages.
+const ENTITY_NOUN: Record<EntityType, string> = {
+  Bank: "bank",
+  ChannelPartner: "channel partner",
+  Corporate: "corporate",
+};
 
 export class InvoiceService {
   private commissionService = new CommissionService();
 
   private async findEntity(entityType: EntityType, entityId: string) {
-    const Model = entityType === "Bank" ? Bank : ChannelPartner;
+    const Model =
+      entityType === "Bank" ? Bank : entityType === "ChannelPartner" ? ChannelPartner : Corporate;
     const entity = await Model.findOne({ _id: entityId, isDeleted: false });
     if (!entity) {
-      throw new InvoiceError(
-        entityType === "Bank" ? "Bank not found" : "Channel partner not found",
-        404
-      );
+      throw new InvoiceError(`${ENTITY_NOUN[entityType].replace(/^./, (c) => c.toUpperCase())} not found`, 404);
     }
     return entity;
   }
@@ -90,7 +103,7 @@ export class InvoiceService {
     const entity = await this.findEntity(entityType, entityId);
 
     const filter: any = {
-      [entityType === "Bank" ? "bankId" : "channelPartnerId"]: entityId,
+      [ENTITY_LEAD_FIELD[entityType]]: entityId,
       status: "Disbursed",
       isDeleted: false,
     };
@@ -140,13 +153,13 @@ export class InvoiceService {
       throw new InvoiceError("Some selected applications could not be found", 400);
     }
 
-    const entityField = entityType === "Bank" ? "bankId" : "channelPartnerId";
+    const entityField = ENTITY_LEAD_FIELD[entityType];
     const appNos = (list: ILead[]) => list.map((l) => l.applicationNumber).join(", ");
 
     const wrongEntity = leads.filter((l) => (l as any)[entityField]?.toString() !== entityId);
     if (wrongEntity.length > 0) {
       throw new InvoiceError(
-        `These applications do not belong to the selected ${entityType === "Bank" ? "bank" : "channel partner"}: ${appNos(wrongEntity)}`,
+        `These applications do not belong to the selected ${ENTITY_NOUN[entityType]}: ${appNos(wrongEntity)}`,
         400
       );
     }
@@ -204,26 +217,38 @@ export class InvoiceService {
     const taxAmount = round2((commissionSubtotal * taxRate) / 100);
     const grandTotal = round2(commissionSubtotal + taxAmount);
 
-    const entitySnapshot: IInvoiceEntitySnapshot =
-      entityType === "Bank"
-        ? {
-            name: entity.bankName,
-            branch: entity.branch,
-            ifsc: entity.ifsc,
-            email: entity.email,
-            address: entity.address,
-            city: entity.city,
-            state: entity.state,
-          }
-        : {
-            name: entity.companyName || entity.name,
-            email: entity.email,
-            address: entity.address,
-            city: entity.city,
-            state: entity.state,
-            gst: entity.gst,
-            pan: entity.pan,
-          };
+    let entitySnapshot: IInvoiceEntitySnapshot;
+    if (entityType === "Bank") {
+      entitySnapshot = {
+        name: entity.bankName,
+        branch: entity.branch,
+        ifsc: entity.ifsc,
+        email: entity.email,
+        address: entity.address,
+        city: entity.city,
+        state: entity.state,
+      };
+    } else if (entityType === "Corporate") {
+      entitySnapshot = {
+        name: entity.corporateName,
+        email: entity.email,
+        address: entity.address,
+        city: entity.city,
+        state: entity.state,
+        gst: entity.gst,
+        pan: entity.pan,
+      };
+    } else {
+      entitySnapshot = {
+        name: entity.companyName || entity.name,
+        email: entity.email,
+        address: entity.address,
+        city: entity.city,
+        state: entity.state,
+        gst: entity.gst,
+        pan: entity.pan,
+      };
+    }
 
     const doc = {
       entityType,

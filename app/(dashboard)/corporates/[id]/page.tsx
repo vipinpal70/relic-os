@@ -4,7 +4,7 @@ import { use, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Building2, Mail, Phone, MapPin, FileText, Edit3,
-  Trash2, Loader2, AlertCircle, X, TrendingUp, DollarSign, CheckCircle2
+  Trash2, Loader2, AlertCircle, X, TrendingUp, DollarSign, CheckCircle2, Plus, Percent
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useCorporateDetails, useCorporateLeads } from "@/lib/hooks/useCorporates";
+import { useLoanTypes } from "@/lib/hooks/useLoanTypes";
 
 export default function CorporateDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -19,11 +20,13 @@ export default function CorporateDetailPage({ params }: { params: Promise<{ id: 
 
   const { corporate, stats, isLoading, updateCorporate, isUpdating, deleteCorporate, isDeleting } = useCorporateDetails(id);
   const { data: leadsData } = useCorporateLeads(id, { limit: 50 });
+  const { loanTypes } = useLoanTypes("Active");
   const leads = leadsData?.data || [];
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [editError, setEditError] = useState("");
+  const [commissionRows, setCommissionRows] = useState<any[]>([]);
   const [editForm, setEditForm] = useState({
     corporateName: "",
     contactPerson: "",
@@ -53,14 +56,84 @@ export default function CorporateDetailPage({ params }: { params: Promise<{ id: 
         notes: corporate.notes || "",
         status: corporate.status || "Active",
       });
+      setCommissionRows(
+        (corporate.commissionTable || []).map((r) => ({
+          loanType: r.loanType,
+          commissionValue: r.commissionValue,
+          commissionType: r.commissionType,
+          effectiveFrom: r.effectiveFrom ? r.effectiveFrom.split("T")[0] : "",
+          effectiveTo: r.effectiveTo ? r.effectiveTo.split("T")[0] : "",
+          minAmount: r.minAmount ?? 0,
+          maxAmount: r.maxAmount ?? 999999999,
+        }))
+      );
     }
   }, [corporate]);
+
+  const addCommissionRow = () => {
+    setCommissionRows([
+      ...commissionRows,
+      {
+        loanType: "",
+        commissionValue: 1.0,
+        commissionType: "Percentage",
+        effectiveFrom: new Date().toISOString().split("T")[0],
+        effectiveTo: "",
+        minAmount: 0,
+        maxAmount: 999999999,
+      },
+    ]);
+  };
+
+  const removeCommissionRow = (index: number) => {
+    setCommissionRows(commissionRows.filter((_, i) => i !== index));
+  };
+
+  const changeCommissionRow = (index: number, field: string, value: any) => {
+    const updated = [...commissionRows];
+    updated[index] = { ...updated[index], [field]: value };
+    setCommissionRows(updated);
+  };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setEditError("");
+
+    // Validate commission rows
+    const loanTypesSeen = new Set<string>();
+    for (let i = 0; i < commissionRows.length; i++) {
+      const row = commissionRows[i];
+      if (!row.loanType) {
+        setEditError(`Commission row ${i + 1}: Loan type is required.`);
+        return;
+      }
+      if (loanTypesSeen.has(row.loanType.toLowerCase())) {
+        setEditError(`Duplicate commission rules are not allowed for "${row.loanType}".`);
+        return;
+      }
+      loanTypesSeen.add(row.loanType.toLowerCase());
+      if (row.commissionValue === undefined || row.commissionValue < 0) {
+        setEditError(`Commission row ${i + 1}: Value must be 0 or greater.`);
+        return;
+      }
+      if (!row.effectiveFrom) {
+        setEditError(`Commission row ${i + 1}: Effective From date is required.`);
+        return;
+      }
+      if (row.effectiveTo && row.effectiveFrom > row.effectiveTo) {
+        setEditError(`Commission row ${i + 1}: Effective To must be after Effective From.`);
+        return;
+      }
+    }
+
     try {
-      await updateCorporate(editForm);
+      await updateCorporate({
+        ...editForm,
+        commissionTable: commissionRows.map((r) => ({
+          ...r,
+          effectiveTo: r.effectiveTo || undefined,
+        })),
+      });
       setIsEditOpen(false);
     } catch (err: any) {
       setEditError(err.message || "Failed to update corporate");
@@ -263,6 +336,61 @@ export default function CorporateDetailPage({ params }: { params: Promise<{ id: 
           </div>
         </div>
 
+        {/* Loan Commission Rates */}
+        <div className="card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-[#111827] flex items-center gap-2">
+              <span className="w-1.5 h-4.5 rounded-full bg-[#2563EB] inline-block"></span>
+              Loan Commission Rates
+            </h3>
+            <button
+              onClick={() => { setEditError(""); setIsEditOpen(true); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-[#E5E7EB] rounded-lg text-xs font-semibold text-[#4B5563] hover:bg-[#F9FAFB] transition-all"
+            >
+              <Edit3 size={13} />
+              <span>Edit Commissions</span>
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100 text-[#6B7280]">
+                  <th className="py-2.5 px-3 font-semibold">Loan Product</th>
+                  <th className="py-2.5 px-3 font-semibold">Commission Structure</th>
+                  <th className="py-2.5 px-3 font-semibold">Active Period</th>
+                  <th className="py-2.5 px-3 font-semibold text-right">Applicable Threshold</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(corporate.commissionTable || []).map((rule: any, i: number) => (
+                  <tr key={i} className="border-b border-gray-100 text-gray-700">
+                    <td className="py-2.5 px-3 font-bold">{rule.loanType}</td>
+                    <td className="py-2.5 px-3">
+                      <span className="font-bold text-[#2563EB]">
+                        {rule.commissionType === "Percentage" ? `${rule.commissionValue}%` : formatCurrency(rule.commissionValue)}
+                      </span>{" "}
+                      ({rule.commissionType})
+                    </td>
+                    <td className="py-2.5 px-3 text-[#6B7280] font-mono">
+                      {formatDate(rule.effectiveFrom)} to {rule.effectiveTo ? formatDate(rule.effectiveTo) : "Present"}
+                    </td>
+                    <td className="py-2.5 px-3 text-right text-gray-600 font-mono">
+                      {formatCurrency(rule.minAmount)} - {rule.maxAmount >= 999999999 ? "∞" : formatCurrency(rule.maxAmount)}
+                    </td>
+                  </tr>
+                ))}
+                {(!corporate.commissionTable || corporate.commissionTable.length === 0) && (
+                  <tr>
+                    <td colSpan={4} className="py-6 text-center text-[#9CA3AF]">
+                      No commission rules configured. Corporate receives flat 0%.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         {/* Edit Drawer */}
         <AnimatePresence>
           {isEditOpen && (
@@ -336,6 +464,140 @@ export default function CorporateDetailPage({ params }: { params: Promise<{ id: 
                     <label className="block text-xs font-semibold text-[#4B5563] mb-1">Notes</label>
                     <textarea rows={2} value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} className="w-full px-3.5 py-2 border border-[#E5E7EB] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] resize-none" />
                   </div>
+
+                  {/* Loan Commission Rates */}
+                  <div className="space-y-4 pt-4 border-t border-[#E5E7EB]">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold text-[#111827] uppercase tracking-wide flex items-center gap-2">
+                        <Percent size={14} className="text-[#2563EB]" />
+                        Loan Commission Rates
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={addCommissionRow}
+                        className="flex items-center gap-1 text-[#2563EB] hover:text-[#1D4ED8] text-xs font-bold transition-all"
+                      >
+                        <Plus size={14} />
+                        <span>Add Row</span>
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {commissionRows.map((row, idx) => (
+                        <div key={idx} className="card p-4 bg-gray-50/70 border border-[#ECEEF2] relative">
+                          <button
+                            type="button"
+                            onClick={() => removeCommissionRow(idx)}
+                            className="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                              <label className="block text-xs font-bold text-[#6B7280] mb-1">Loan Type *</label>
+                              <select
+                                value={row.loanType}
+                                onChange={(e) => changeCommissionRow(idx, "loanType", e.target.value)}
+                                className="w-full px-3 py-2.5 border border-[#E5E7EB] rounded-lg text-xs bg-white focus:outline-none"
+                              >
+                                <option value="">Select product...</option>
+                                {loanTypes.map((lt) => (
+                                  <option key={lt._id} value={lt.name}>
+                                    {lt.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-bold text-[#6B7280] mb-1">Commission Type</label>
+                              <select
+                                value={row.commissionType}
+                                onChange={(e) => changeCommissionRow(idx, "commissionType", e.target.value)}
+                                className="w-full px-3 py-2.5 border border-[#E5E7EB] rounded-lg text-xs bg-white focus:outline-none"
+                              >
+                                <option value="Percentage">Percentage (%)</option>
+                                <option value="Fixed">Fixed Amount (₹)</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-bold text-[#6B7280] mb-1">Commission Value *</label>
+                              <input
+                                type="number"
+                                step="any"
+                                value={Number.isNaN(row.commissionValue) ? "" : row.commissionValue}
+                                onChange={(e) => {
+                                  const v = parseFloat(e.target.value);
+                                  changeCommissionRow(idx, "commissionValue", Number.isNaN(v) ? 0 : v);
+                                }}
+                                className="w-full px-3 py-2 border border-[#E5E7EB] rounded-lg text-xs focus:outline-none"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-2.5">
+                            <div className="col-span-2">
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="block text-xs font-bold text-[#6B7280] mb-1">Effective From *</label>
+                                  <input
+                                    type="date"
+                                    value={row.effectiveFrom}
+                                    onChange={(e) => changeCommissionRow(idx, "effectiveFrom", e.target.value)}
+                                    className="w-full px-2 py-0.5 border border-[#E5E7EB] rounded-lg text-sm font-mono focus:outline-none"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-[#6B7280] mb-1">Effective To</label>
+                                  <input
+                                    type="date"
+                                    value={row.effectiveTo}
+                                    onChange={(e) => changeCommissionRow(idx, "effectiveTo", e.target.value)}
+                                    className="w-full px-2 py-0.5 border border-[#E5E7EB] rounded-lg text-sm font-mono focus:outline-none"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-bold text-[#6B7280] mb-1">Min Amount</label>
+                              <input
+                                type="number"
+                                value={Number.isNaN(row.minAmount) ? "" : row.minAmount}
+                                onChange={(e) => {
+                                  const v = parseFloat(e.target.value);
+                                  changeCommissionRow(idx, "minAmount", Number.isNaN(v) ? 0 : v);
+                                }}
+                                className="w-full px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-bold text-[#6B7280] mb-1">Max Amount</label>
+                              <input
+                                type="number"
+                                value={Number.isNaN(row.maxAmount) ? "" : row.maxAmount}
+                                onChange={(e) => {
+                                  const v = parseFloat(e.target.value);
+                                  changeCommissionRow(idx, "maxAmount", Number.isNaN(v) ? 0 : v);
+                                }}
+                                className="w-full px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {commissionRows.length === 0 && (
+                        <p className="text-xs text-[#9CA3AF] py-2">
+                          No commission rules yet. Click &quot;Add Row&quot; to configure one.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#E5E7EB]">
                     <button type="button" onClick={() => setIsEditOpen(false)} className="px-4 py-2 border border-[#E5E7EB] rounded-xl text-sm font-semibold text-[#4B5563] hover:bg-[#F9FAFB] transition-all">Cancel</button>
                     <button type="submit" disabled={isUpdating} className="px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-medium rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-sm">

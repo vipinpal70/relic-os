@@ -3,7 +3,7 @@ import { z } from "zod";
 const DateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD");
 
 export const GenerateInvoiceSchema = z.object({
-  entityType: z.enum(["Bank", "ChannelPartner"]),
+  entityType: z.enum(["Bank", "ChannelPartner", "Corporate"]),
   entityId: z.string().min(1, "Entity is required"),
   leadIds: z.array(z.string().min(1)).min(1, "Select at least one application"),
   periodStart: DateString.optional(),

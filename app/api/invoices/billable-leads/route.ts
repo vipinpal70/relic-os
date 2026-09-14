@@ -15,9 +15,12 @@ export async function GET(request: Request) {
     const entityType = searchParams.get("entityType");
     const entityId = searchParams.get("entityId");
 
-    if ((entityType !== "Bank" && entityType !== "ChannelPartner") || !entityId) {
+    if (
+      (entityType !== "Bank" && entityType !== "ChannelPartner" && entityType !== "Corporate") ||
+      !entityId
+    ) {
       return NextResponse.json(
-        { error: "entityType (Bank | ChannelPartner) and entityId are required" },
+        { error: "entityType (Bank | ChannelPartner | Corporate) and entityId are required" },
         { status: 400 }
       );
     }

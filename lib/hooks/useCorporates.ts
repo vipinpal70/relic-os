@@ -1,5 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+export interface CommissionRule {
+  loanType: string;
+  commissionValue: number;
+  commissionType: "Fixed" | "Percentage";
+  effectiveFrom: string;
+  effectiveTo?: string;
+  minAmount?: number;
+  maxAmount?: number;
+}
+
 export interface Corporate {
   _id: string;
   corporateName: string;
@@ -13,6 +23,7 @@ export interface Corporate {
   city?: string;
   status: "Active" | "Inactive";
   notes?: string;
+  commissionTable?: CommissionRule[];
   createdAt: string;
   updatedAt: string;
 }

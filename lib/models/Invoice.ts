@@ -26,7 +26,7 @@ export interface IInvoiceEntitySnapshot {
 
 export interface IInvoice extends Document {
   invoiceNumber: string;
-  entityType: "Bank" | "ChannelPartner";
+  entityType: "Bank" | "ChannelPartner" | "Corporate";
   entityId: mongoose.Types.ObjectId;
   // Snapshots keep the invoice an immutable historical record even if the
   // entity or its leads are edited later.
@@ -70,7 +70,7 @@ const LineItemSchema = new Schema<IInvoiceLineItem>(
 const InvoiceSchema = new Schema<IInvoice>(
   {
     invoiceNumber: { type: String, required: true, unique: true, trim: true },
-    entityType: { type: String, enum: ["Bank", "ChannelPartner"], required: true },
+    entityType: { type: String, enum: ["Bank", "ChannelPartner", "Corporate"], required: true },
     entityId: { type: Schema.Types.ObjectId, required: true, refPath: "entityType" },
     entitySnapshot: {
       name: { type: String, required: true },

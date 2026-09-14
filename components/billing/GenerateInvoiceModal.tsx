@@ -16,7 +16,7 @@ interface LineEdit {
 interface GenerateInvoiceModalProps {
   open: boolean;
   onClose: () => void;
-  entityType: "Bank" | "ChannelPartner";
+  entityType: "Bank" | "ChannelPartner" | "Corporate";
   entityLabel: string;
   leads: BillableLead[];
   periodStart: string;
@@ -131,7 +131,8 @@ function GenerateInvoiceModalContent({
     }
   };
 
-  const isBank = entityType === "Bank";
+  // Channel partners receive a payout statement; banks and corporates are invoiced.
+  const isPayout = entityType === "ChannelPartner";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -152,7 +153,7 @@ function GenerateInvoiceModalContent({
           <div>
             <h3 className="text-lg font-bold text-[#111827] flex items-center gap-2">
               <FileText className="text-[#2563EB] w-5 h-5" />
-              <span>{isBank ? "Generate Invoice" : "Generate Payout Statement"}</span>
+              <span>{isPayout ? "Generate Payout Statement" : "Generate Invoice"}</span>
             </h3>
             <p className="text-xs text-[#6B7280] mt-1">
               {entityLabel} · {leads.length} application{leads.length !== 1 ? "s" : ""} · Review
@@ -331,7 +332,7 @@ function GenerateInvoiceModalContent({
               className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg text-sm font-medium hover:bg-[#1D4ED8] disabled:opacity-50 transition-colors"
             >
               {isGenerating && <Loader2 size={14} className="animate-spin" />}
-              {isBank ? "Generate Invoice" : "Generate Statement"}
+              {isPayout ? "Generate Statement" : "Generate Invoice"}
             </button>
           </div>
         </form>

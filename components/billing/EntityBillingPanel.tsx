@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Landmark, Users } from "lucide-react";
+import { FileText, Landmark, Users, Building2 } from "lucide-react";
 import { useBanks } from "@/lib/hooks/useBanks";
 import { useChannelPartners } from "@/lib/hooks/useChannelPartners";
+import { useCorporates } from "@/lib/hooks/useCorporates";
 import {
   useBillableLeads,
   useInvoices,
@@ -27,9 +28,16 @@ function todayStr(): string {
   return new Date().toISOString().split("T")[0];
 }
 
-export function EntityBillingPanel({ entityType }: { entityType: "Bank" | "ChannelPartner" }) {
+export function EntityBillingPanel({
+  entityType,
+}: {
+  entityType: "Bank" | "ChannelPartner" | "Corporate";
+}) {
   const router = useRouter();
   const isBank = entityType === "Bank";
+  const isCorporate = entityType === "Corporate";
+  // Channel partners receive a payout statement; banks and corporates are invoiced.
+  const isPayout = entityType === "ChannelPartner";
 
   const [entityId, setEntityId] = useState("");
   const [startDate, setStartDate] = useState(monthStart());
@@ -40,14 +48,13 @@ export function EntityBillingPanel({ entityType }: { entityType: "Bank" | "Chann
 
   const banksQuery = useBanks({ status: "Active", limit: 100 });
   const partnersQuery = useChannelPartners({ status: "Active", limit: 100 });
+  const corporatesQuery = useCorporates({ status: "Active", limit: 100 });
 
-  const entities = useMemo(
-    () =>
-      isBank
-        ? banksQuery.data.map((b) => ({ id: b._id, label: `${b.bankName} — ${b.branch}` }))
-        : partnersQuery.data.map((p) => ({ id: p._id, label: `${p.companyName} (${p.name})` })),
-    [isBank, banksQuery.data, partnersQuery.data]
-  );
+  const entities = useMemo(() => {
+    if (isBank) return banksQuery.data.map((b) => ({ id: b._id, label: `${b.bankName} — ${b.branch}` }));
+    if (isCorporate) return corporatesQuery.data.map((c) => ({ id: c._id, label: c.corporateName }));
+    return partnersQuery.data.map((p) => ({ id: p._id, label: `${p.companyName} (${p.name})` }));
+  }, [isBank, isCorporate, banksQuery.data, partnersQuery.data, corporatesQuery.data]);
   const entityLabel = entities.find((e) => e.id === entityId)?.label || "";
 
   const billable = useBillableLeads({ entityType, entityId, startDate, endDate });
@@ -99,7 +106,8 @@ export function EntityBillingPanel({ entityType }: { entityType: "Bank" | "Chann
     invoices.cancelInvoice(invoice._id).catch((err) => alert(err.message));
   };
 
-  const entityNoun = isBank ? "bank" : "channel partner";
+  const entityNoun = isBank ? "bank" : isCorporate ? "corporate" : "channel partner";
+  const entityHeading = isBank ? "Bank" : isCorporate ? "Corporate" : "Channel Partner";
 
   return (
     <div>
@@ -107,7 +115,7 @@ export function EntityBillingPanel({ entityType }: { entityType: "Bank" | "Chann
       <div className="card p-4 mb-4 flex flex-wrap items-end gap-4">
         <div className="min-w-52 flex-1 sm:flex-none sm:w-72">
           <label className="block text-xs font-semibold text-[#4B5563] mb-1">
-            {isBank ? "Bank" : "Channel Partner"}
+            {entityHeading}
           </label>
           <select
             value={entityId}
@@ -152,6 +160,8 @@ export function EntityBillingPanel({ entityType }: { entityType: "Bank" | "Chann
         <div className="card p-12 flex flex-col items-center justify-center gap-3 text-center">
           {isBank ? (
             <Landmark className="w-10 h-10 text-[#D1D5DB]" />
+          ) : isCorporate ? (
+            <Building2 className="w-10 h-10 text-[#D1D5DB]" />
           ) : (
             <Users className="w-10 h-10 text-[#D1D5DB]" />
           )}
@@ -177,7 +187,7 @@ export function EntityBillingPanel({ entityType }: { entityType: "Bank" | "Chann
                   className="flex items-center gap-1.5 px-3 py-1 bg-[#2563EB] text-white rounded-md text-xs font-medium hover:bg-[#1D4ED8] transition-colors"
                 >
                   <FileText size={12} />
-                  {isBank ? "Generate Invoice" : "Generate Payout Statement"}
+                  {isPayout ? "Generate Payout Statement" : "Generate Invoice"}
                 </button>
                 <button
                   onClick={() => setSelected([])}
